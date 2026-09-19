@@ -242,6 +242,34 @@
 
 <div class="flex flex-col gap-6">
 	<section class="flex flex-col gap-2">
+		<span class={label}>Opposing team <span class={hint}>(optional, up to 6 Pokémon)</span></span>
+		<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+			{#each [...rivalTeam.keys()] as i (i)}
+				<SpeciesField bind:value={rivalTeam[i]} onchange={onRivalChange} />
+			{/each}
+		</div>
+
+		<details class="text-sm" bind:open={pasteOpen}>
+			<summary class="cursor-pointer text-gray-300">Paste the opposing team (optional)</summary>
+			<div class="mt-2 flex flex-col gap-2">
+				<textarea
+					bind:value={rivalPasteText}
+					rows="8"
+					spellcheck="false"
+					placeholder="Paste their Pokepaste to get full sets for the calculator…"
+					class="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 font-mono text-xs text-gray-100 placeholder:text-gray-500"
+				></textarea>
+				<div><Button size="sm" onclick={applyRivalPaste}>Use this paste</Button></div>
+			</div>
+		</details>
+		{#if rivalNotice}
+			<p class="text-xs {rivalNoticeIsError ? 'text-red-400' : 'text-emerald-400'}">
+				{rivalNotice}
+			</p>
+		{/if}
+	</section>
+
+	<section class="flex flex-col gap-2">
 		<span class={label}>Format</span>
 		<div class="flex gap-2">
 			{#each FORMATS as f (f.value)}
@@ -329,32 +357,6 @@
 	{/if}
 
 	<section class="flex flex-col gap-2">
-		<span class={label}>Opposing team <span class={hint}>(optional, up to 6 Pokémon)</span></span>
-		<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-			{#each [...rivalTeam.keys()] as i (i)}
-				<SpeciesField bind:value={rivalTeam[i]} onchange={onRivalChange} />
-			{/each}
-		</div>
-
-		<details class="text-sm" bind:open={pasteOpen}>
-			<summary class="cursor-pointer text-gray-300">Paste the opposing team (optional)</summary>
-			<div class="mt-2 flex flex-col gap-2">
-				<textarea
-					bind:value={rivalPasteText}
-					rows="8"
-					spellcheck="false"
-					placeholder="Paste their Pokepaste to get full sets for the calculator…"
-					class="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 font-mono text-xs text-gray-100 placeholder:text-gray-500"
-				></textarea>
-				<div><Button size="sm" onclick={applyRivalPaste}>Use this paste</Button></div>
-			</div>
-		</details>
-		{#if rivalNotice}
-			<p class="text-xs {rivalNoticeIsError ? 'text-red-400' : 'text-emerald-400'}">
-				{rivalNotice}
-			</p>
-		{/if}
-
 		{#if rivalFilled.length >= 2}
 			<span class="{label} mt-2">
 				Opposing selection <span class={hint}>({game.rivalSelection.length}/{SELECTION_SIZE})</span>
