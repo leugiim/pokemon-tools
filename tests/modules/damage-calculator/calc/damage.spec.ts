@@ -915,3 +915,76 @@ describe('damage description', () => {
 		expect(text).toContain('vs. 32 HP / 0 Def Kingambit');
 	});
 });
+
+describe('Protean / Libero current type', () => {
+	const build = () => {
+		const attacker = buildSlot({
+			speciesName: 'Greninja',
+			ability: 'Protean',
+			natureName: 'Modest',
+			statPoints: { spa: 32 },
+			moveNames: ['Flamethrower']
+		});
+		const defender = buildSlot({
+			speciesName: 'Garchomp',
+			ability: 'Rough Skin',
+			natureName: 'Hardy',
+			statPoints: {},
+			moveNames: ['Earthquake']
+		});
+		return { attacker, defender };
+	};
+	const damage = (attacker: TeamSlot, defender: TeamSlot) =>
+		computeDamage(attacker, attacker.moves[0]!, defender).result.range()[1];
+
+	it('Auto gives STAB on every move, as the calc does', () => {
+		const { attacker, defender } = build();
+		const auto = damage(attacker, defender);
+		attacker.currentType = 'Fire';
+		expect(damage(attacker, defender)).toBe(auto);
+	});
+
+	it('a pinned type that does not match the move drops the STAB', () => {
+		const { attacker, defender } = build();
+		const auto = damage(attacker, defender);
+		attacker.currentType = 'Water';
+		const noStab = damage(attacker, defender);
+		expect(noStab).toBeLessThan(auto);
+		expect(Math.abs(noStab - auto / 1.5)).toBeLessThan(auto * 0.03);
+	});
+
+	it('loses the native types too: a pinned Fire Greninja has no Water or Dark STAB', () => {
+		const { attacker, defender } = build();
+		const dmg = (name: string) => computeDamage(attacker, move(name), defender).result.range()[1];
+		const surfAuto = dmg('Surf');
+		const darkAuto = dmg('Dark Pulse');
+		attacker.currentType = 'Fire';
+		expect(dmg('Surf')).toBeLessThan(surfAuto);
+		expect(dmg('Dark Pulse')).toBeLessThan(darkAuto);
+		expect(dmg('Flamethrower')).toBe(
+			computeDamage(build().attacker, move('Flamethrower'), defender).result.range()[1]
+		);
+	});
+
+	it('takes damage as the pinned type only', () => {
+		const { attacker, defender } = build();
+		const quake = (target: TeamSlot) =>
+			computeDamage(defender, move('Earthquake'), target).result.range()[1];
+		// Ground: neutral into Water/Dark, super effective into pure Fire.
+		const asWaterDark = quake(attacker);
+		attacker.currentType = 'Fire';
+		expect(toSmogonPokemon(attacker).types).toEqual(['Fire', '???']);
+		expect(quake(attacker)).toBeGreaterThan(asWaterDark * 1.9);
+	});
+
+	it('is ignored when the ability is not Protean/Libero, and reset on a species change', () => {
+		const { attacker } = build();
+		attacker.currentType = 'Water';
+		expect(attacker.types).toEqual(['Water']);
+		attacker.ability = 'Torrent';
+		expect(attacker.types).toEqual(['Water', 'Dark']);
+		attacker.ability = 'Protean';
+		attacker.species = species('Cinderace');
+		expect(attacker.currentType).toBeNull();
+	});
+});

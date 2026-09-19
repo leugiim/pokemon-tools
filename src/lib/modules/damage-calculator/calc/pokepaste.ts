@@ -109,6 +109,7 @@ export function importPokePaste(slot: TeamSlot, text: string): void {
 		? (findByName(allNatures, parsed.nature) ?? NEUTRAL_NATURE)
 		: NEUTRAL_NATURE;
 	slot.boosts = emptyStatBoosts();
+	slot.currentType = null;
 
 	const statPoints = emptyStatPoints();
 	if (parsed.evs) {

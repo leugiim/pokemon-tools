@@ -17,7 +17,7 @@
 	 */
 	let { slot, onclose }: { slot: TeamSlot; onclose: () => void } = $props();
 
-	const types = $derived(slot.species?.types ?? []);
+	const types = $derived(slot.types);
 	const mods = $derived({ ability: slot.ability, item: slot.item?.name });
 	const modifies = $derived(hasDefensiveModifier(types, mods));
 

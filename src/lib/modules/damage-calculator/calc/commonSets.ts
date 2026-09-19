@@ -171,5 +171,6 @@ export function applyCommonSet(slot: TeamSlot, set: CommonSet): void {
 	slot.nature = set.nature;
 	slot.statPoints = set.statPoints;
 	slot.boosts = emptyStatBoosts();
+	slot.currentType = null;
 	slot.moves = set.moves;
 }

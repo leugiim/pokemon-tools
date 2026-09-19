@@ -65,9 +65,17 @@ function allIvs(): Record<StatID, number> {
 export function toSmogonPokemon(slot: TeamSlot): Pokemon {
 	if (!slot.species) throw new Error('toSmogonPokemon: slot has no species selected');
 
+	// A pinned Protean/Libero type is the Pokémon's only type; its ability
+	// is left out so the calc doesn't also give STAB on every move (Protean
+	// has no other effect on damage). `overrides` is deep-merged by position,
+	// so `[type]` alone would keep a dual type's second type (and its STAB):
+	// the typeless '???' fills that slot.
+	const shifted = slot.shiftedType as Pokemon['types'][number] | null;
+
 	return new Pokemon(GEN_NUM, slot.species.name, {
 		level: LEVEL,
-		ability: slot.ability ?? undefined,
+		ability: shifted ? undefined : (slot.ability ?? undefined),
+		...(shifted ? { overrides: { types: [shifted, '???'] } } : {}),
 		item: slot.item?.name,
 		nature: slot.nature.name,
 		ivs: allIvs(),
