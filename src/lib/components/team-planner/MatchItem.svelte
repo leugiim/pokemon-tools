@@ -48,61 +48,68 @@
 	</div>
 {/snippet}
 
-<li class="flex flex-col gap-2 rounded-xl border border-gray-800 bg-gray-900 p-3">
-	<div class="flex items-center gap-3">
-		<div
-			class="flex h-8 w-16 shrink-0 items-center justify-center rounded-md text-xs font-bold {badge}"
-		>
-			{RESULT_LABELS[match.result]}
-			{#if match.format === 'bo3'}<span class="ml-1 font-normal">{seriesScore(match.games)}</span
-				>{/if}
-		</div>
-		<div class="min-w-0 flex-1 text-xs text-gray-500">{formatDate(match.date)}</div>
-		<div class="flex shrink-0 gap-1">
-			<Button
-				size="sm"
-				title="Edit"
-				href={resolve('/teams/[id]/match/[matchId]', { id: match.teamId, matchId: match.id })}
-			>
-				Edit
-			</Button>
-			<Button size="sm" title="Export match" onclick={() => onexport(match)}>Export</Button>
-			<Button size="sm" variant="danger" title="Delete match" onclick={() => ondelete(match)}>
-				Delete
-			</Button>
-		</div>
+<li class="flex items-start gap-3 rounded-xl border border-gray-800 bg-gray-900 p-3">
+	<div
+		class="flex h-8 w-16 shrink-0 items-center justify-center rounded-md text-xs font-bold {badge}"
+	>
+		{RESULT_LABELS[match.result]}
+		{#if match.format === 'bo3'}<span class="ml-1 font-normal">{seriesScore(match.games)}</span
+			>{/if}
 	</div>
-	<div class="flex min-w-0 flex-col gap-1">
-		{#each match.games as game, i (i)}
-			{@const notes = match.format === 'bo3' ? game.notes : i === 0 ? match.notes : ''}
-			<div class="flex flex-col gap-1 sm:flex-row sm:gap-4">
-				<div class="flex min-w-0 flex-col gap-1">
-					{#if match.format === 'bo3'}
-						<div class="mt-1 text-xs font-medium text-gray-300">
-							Game {i + 1} · {RESULT_LABELS[game.result]}
-						</div>
-					{/if}
-					{@render row('You', game.selection, game.lead, benched(match.teamRoster, game.selection))}
-					{#if game.rivalSelection.length > 0}
+	<div class="flex min-w-0 flex-1 flex-col gap-2">
+		<div class="flex items-center gap-3">
+			<div class="min-w-0 flex-1 text-xs text-gray-500">{formatDate(match.date)}</div>
+			<div class="flex shrink-0 gap-1">
+				<Button
+					size="sm"
+					title="Edit"
+					href={resolve('/teams/[id]/match/[matchId]', { id: match.teamId, matchId: match.id })}
+				>
+					Edit
+				</Button>
+				<Button size="sm" title="Export match" onclick={() => onexport(match)}>Export</Button>
+				<Button size="sm" variant="danger" title="Delete match" onclick={() => ondelete(match)}>
+					Delete
+				</Button>
+			</div>
+		</div>
+		<div class="flex min-w-0 flex-col gap-1">
+			{#each match.games as game, i (i)}
+				{@const notes = match.format === 'bo3' ? game.notes : i === 0 ? match.notes : ''}
+				<div class="flex flex-col gap-1 sm:flex-row sm:gap-4">
+					<div class="flex min-w-0 flex-col gap-1">
+						{#if match.format === 'bo3'}
+							<div class="mt-1 text-xs font-medium text-gray-300">
+								Game {i + 1} · {RESULT_LABELS[game.result]}
+							</div>
+						{/if}
 						{@render row(
-							'Rival',
-							game.rivalSelection,
-							game.rivalLead,
-							benched(match.rivalTeam, game.rivalSelection)
+							'You',
+							game.selection,
+							game.lead,
+							benched(match.teamRoster, game.selection)
 						)}
-					{:else if match.rivalTeam.length > 0 && i === 0}
-						{@render row('Rival', match.rivalTeam, [], [])}
+						{#if game.rivalSelection.length > 0}
+							{@render row(
+								'Rival',
+								game.rivalSelection,
+								game.rivalLead,
+								benched(match.rivalTeam, game.rivalSelection)
+							)}
+						{:else if match.rivalTeam.length > 0 && i === 0}
+							{@render row('Rival', match.rivalTeam, [], [])}
+						{/if}
+					</div>
+					{#if notes}
+						<p class="min-w-0 flex-1 text-xs whitespace-pre-wrap text-gray-300 sm:self-center">
+							{notes}
+						</p>
 					{/if}
 				</div>
-				{#if notes}
-					<p class="min-w-0 flex-1 text-xs whitespace-pre-wrap text-gray-300 sm:self-center">
-						{notes}
-					</p>
-				{/if}
-			</div>
-		{/each}
-		{#if match.format === 'bo3' && match.notes}
-			<p class="mt-1 text-xs whitespace-pre-wrap text-gray-300">{match.notes}</p>
-		{/if}
+			{/each}
+			{#if match.format === 'bo3' && match.notes}
+				<p class="mt-1 text-xs whitespace-pre-wrap text-gray-300">{match.notes}</p>
+			{/if}
+		</div>
 	</div>
 </li>
