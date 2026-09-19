@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import favicon from '$lib/assets/favicon.svg';
+	import { CURRENT_REGULATION } from '$lib/modules/shared/species/generation';
 	import Footer from '$lib/components/shared/Footer.svelte';
 
 	// Only place the domain is spelled out besides static/sitemap.xml and
@@ -80,6 +81,12 @@
 				{link.label}
 			</a>
 		{/each}
+		<span
+			class="ml-auto rounded border border-gray-700 px-2 py-0.5 text-xs text-gray-300"
+			title="The Pokémon picker follows this regulation"
+		>
+			Current: {CURRENT_REGULATION}
+		</span>
 	</nav>
 	<main class="flex flex-1 flex-col">
 		{@render children()}

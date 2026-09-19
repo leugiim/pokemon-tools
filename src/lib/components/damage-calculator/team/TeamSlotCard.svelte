@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { TeamRoster } from '$lib/modules/damage-calculator/stores/roster.svelte';
 	import type { TeamSlot } from '$lib/modules/damage-calculator/stores/team.svelte';
-	import type { SpeciesItem } from '$lib/modules/shared/species/generation';
+	import { formsOf, type SpeciesItem } from '$lib/modules/shared/species/generation';
 	import { abilitiesOf } from '$lib/modules/damage-calculator/calc/abilities';
 	import {
 		applyCommonSet,
@@ -165,8 +165,31 @@
 	let commonSetsOpen = $state(false);
 	let speedCheckOpen = $state(false);
 
-	function selectCommonSet(set: CommonSet) {
+	/**
+	 * Applies a common set, then puts the slot in the forme its item calls
+	 * for: a Mega Stone turns it into that Mega (Charizardite X on a Mega Y
+	 * slot gives Mega X), and any other item turns a Mega back into its
+	 * normal forme. `selectSpecies` resets the ability, so the set's own
+	 * comes back after.
+	 */
+	async function selectCommonSet(set: CommonSet) {
 		applyCommonSet(slot, set);
+		const species = slot.species;
+		if (!species) return;
+
+		const mega = set.item ? megaFormFor(set.item, species) : null;
+		const normal =
+			!mega && megaStoneFor(species) && megaStoneFor(species) !== set.item
+				? formsOf(species)[0].species
+				: null;
+		const target = mega ?? normal;
+		if (!target || target === species) return;
+
+		await selectSpecies(target);
+		if (set.ability !== undefined) {
+			slot.ability = set.ability;
+			applyEntryEffect(slot.ability, field);
+		}
 	}
 </script>
 

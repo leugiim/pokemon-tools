@@ -9,10 +9,10 @@ import {
 	type NatureInfo,
 	type StatPoints
 } from './format';
-import { allItems, type HeldItem } from './items';
+import { allItems, megaStoneFor, type HeldItem } from './items';
 import { allMoves } from './moves';
 import { findByName } from './pokepaste';
-import type { SpeciesItem } from '$lib/modules/shared/species/generation';
+import { speciesLabel, type SpeciesItem } from '$lib/modules/shared/species/generation';
 import type { MoveSlots, TeamSlot } from '../stores/team.svelte';
 
 /**
@@ -104,20 +104,44 @@ function toCommonSet(name: string, raw: RawCommonSet): CommonSet {
 /**
  * `rawSetdex`'s own species keys are plain display names (`"Charizard"`,
  * `"Rotom-Wash"`, `"Indeedee-F"`) matching this app's own `species.name` —
- * a Mega Evolution's set lives under its *base* species instead (e.g.
+ * a Mega Evolution's sets live under its *base* species instead (e.g.
  * Charizard's Mega Y sets are under `"Charizard"`, holding a Mega Stone
- * `item`, not under a `"Charizard-Mega-Y"` key of their own), the same way
- * `megaStoneFor` and this app's own Mega handling already treat holding
- * the stone and being the evolved forme as two separate things (`generation.ts`).
- * A common set for a Mega Evolution's base species doesn't switch the
- * slot's own forme — same as `importPokePaste` never does either.
+ * `item`, not under a `"Charizard-Mega-Y"` key of their own), so a Mega
+ * gets all of its base species' sets (`megaSetsFor`) — picking one switches
+ * the slot to the forme its item calls for (`TeamSlotCard`).
  */
-function rawSetsFor(species: SpeciesItem): Record<string, RawCommonSet> | undefined {
+function rawSetsByName(name: string): Record<string, RawCommonSet> | undefined {
 	const setdex = rawSetdex as RawSetdex;
-	if (setdex[species.name]) return setdex[species.name];
-	const key = Object.keys(setdex).find((k) => k.toLowerCase() === species.name.toLowerCase());
+	const key = Object.keys(setdex).find((k) => k.toLowerCase() === name.toLowerCase());
 	return key ? setdex[key] : undefined;
 }
+
+function megaSetsFor(species: SpeciesItem): Record<string, RawCommonSet> | undefined {
+	const base = species.baseSpecies;
+	if (!megaStoneFor(species) || !base) return undefined;
+	return rawSetsByName(COMMON_SET_ALIASES[base] ?? base);
+}
+
+function rawSetsFor(species: SpeciesItem): Record<string, RawCommonSet> | undefined {
+	return (
+		rawSetsByName(species.name) ??
+		rawSetsByName(speciesLabel(species)) ??
+		(COMMON_SET_ALIASES[species.name]
+			? rawSetsByName(COMMON_SET_ALIASES[species.name])
+			: undefined) ??
+		megaSetsFor(species)
+	);
+}
+
+/**
+ * Species whose sets are vendored under a different forme's name: Floette's
+ * are all Floette-Eternal's (the only Floette Champions has), and Aegislash's
+ * are under its bare name for both stances.
+ */
+const COMMON_SET_ALIASES: Record<string, string> = {
+	Floette: 'Floette-Eternal',
+	'Aegislash-Blade': 'Aegislash'
+};
 
 /** Every vendored common set for `species`, or `[]` if it has none. */
 export function commonSetsFor(species: SpeciesItem): CommonSet[] {
