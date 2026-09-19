@@ -20,6 +20,9 @@ export { buildNewTeamHandoff, buildTeamHandoff } from './calcHandoff';
 export { formatDate, RESULT_LABELS, winrateClass } from './format';
 export { historyToJson, jsonToHistory, jsonToMatch, matchToJson } from './matchIO';
 export {
+	canAddGame,
+	emptyGame,
+	gamesForFormat,
 	LEAD_SIZE,
 	padRivalSlots,
 	RIVAL_TEAM_SIZE,
@@ -28,6 +31,7 @@ export {
 	toggleLead,
 	toggleSelection,
 	validateMatch,
+	type GameDraft,
 	type PickState
 } from './matchForm';
 export { getPokemonNames } from './pokemonNames';
@@ -46,4 +50,15 @@ export {
 	type TeamStats
 } from './stats';
 export { planner } from './teams.svelte';
-export { displayName, type Match, type MatchResult, type Team } from './types';
+export {
+	displayName,
+	MAX_GAMES,
+	matchResult,
+	normalizeMatch,
+	seriesScore,
+	type Game,
+	type Match,
+	type MatchFormat,
+	type MatchResult,
+	type Team
+} from './types';

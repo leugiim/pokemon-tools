@@ -9,6 +9,7 @@ import {
 	jsonToHistory,
 	megaBase,
 	winrate,
+	type Game,
 	type Match,
 	type Team
 } from '$lib/modules/team-planner';
@@ -24,20 +25,28 @@ const team: Team = {
 };
 const matches: Match[] = jsonToHistory(read('history.full.json'), team.id)!;
 
-function match(over: Partial<Match>): Match {
+function match(over: Partial<Match> & Partial<Game>): Match {
+	const { selection, lead, rivalSelection, rivalLead, ...rest } = over;
+	const result = over.result ?? 'win';
 	return {
 		id: 'x',
 		teamId: team.id,
 		date: 0,
-		result: 'win',
+		format: 'bo1',
 		teamRoster: [],
-		selection: [],
-		lead: [],
 		rivalTeam: [],
-		rivalSelection: [],
-		rivalLead: [],
 		notes: '',
-		...over
+		...rest,
+		result,
+		games: over.games ?? [
+			{
+				result,
+				selection: selection ?? [],
+				lead: lead ?? [],
+				rivalSelection: rivalSelection ?? [],
+				rivalLead: rivalLead ?? []
+			}
+		]
 	};
 }
 
@@ -231,5 +240,46 @@ describe('filters', () => {
 		expect(filterEnemyLeadStats(leads, '', 2).map((s) => s.lead)).toEqual([
 			'Incineroar + Rillaboom'
 		]);
+	});
+});
+
+describe('Bo3 stats', () => {
+	const g = (result: 'win' | 'loss', lead: string[], rivalLead: string[]): Game => ({
+		result,
+		selection: ['A', 'B', 'C', 'D'],
+		lead,
+		rivalSelection: ['X', 'Y'],
+		rivalLead
+	});
+	const series = match({
+		format: 'bo3',
+		result: 'win',
+		rivalTeam: ['X', 'Y'],
+		games: [
+			g('win', ['A', 'B'], ['X', 'Y']),
+			g('loss', ['C', 'D'], ['X', 'Y']),
+			g('win', ['A', 'B'], ['X', 'Y'])
+		]
+	});
+
+	it('counts the series once in the totals', () => {
+		const s = computeTeamStats(team, [series]);
+		expect([s.total, s.wins, s.wr]).toEqual([1, 1, 100]);
+		expect(winrate([series])).toBe(100);
+	});
+
+	it('counts leads and picks per game', () => {
+		const s = computeTeamStats(team, [series]);
+		expect(s.leadStats).toEqual([
+			{ lead: 'A + B', wins: 2, total: 2, wr: 100 },
+			{ lead: 'C + D', wins: 0, total: 1, wr: 0 }
+		]);
+		expect(s.enemyLeadStats).toEqual([{ lead: 'X + Y', wins: 1, total: 3, wr: 33 }]);
+		expect(s.pokeStats.find((p) => p.name === 'A')).toMatchObject({ times: 3, wins: 2 });
+	});
+
+	it("filters by any game's selection", () => {
+		const other = match({ id: 'o', selection: ['Z'] });
+		expect(filterMatches([series, other], { result: '', own: 'a', rival: '' })).toEqual([series]);
 	});
 });

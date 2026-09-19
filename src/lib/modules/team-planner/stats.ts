@@ -58,11 +58,16 @@ export function computeTeamStats(team: Team, matches: Match[]): TeamStats {
 	const decided = matches.filter((m) => m.result !== 'ongoing');
 	const total = decided.length;
 	const wins = decided.filter((m) => m.result === 'win').length;
+	// Pokémon and lead stats count games, so a Bo3 weighs as much as it was played.
+	const decidedGames = matches.flatMap((m) => m.games.filter((g) => g.result !== 'ongoing'));
 
 	// Todos los pokemon que alguna vez estuvieron en el equipo (actuales + históricos de partidas)
 	const currentPokeMap = new Map(team.pokemon.map((p) => [displayName(p), p]));
 	const allNamesRaw = [
-		...new Set([...team.pokemon.map(displayName), ...matches.flatMap((m) => m.selection)])
+		...new Set([
+			...team.pokemon.map(displayName),
+			...matches.flatMap((m) => m.games.flatMap((g) => g.selection))
+		])
 	];
 
 	// Deduplicar agrupando base + mega como uno solo.
@@ -80,8 +85,8 @@ export function computeTeamStats(team: Team, matches: Match[]): TeamStats {
 	const pokeStats: PokeStat[] = [...baseDisplayMap.entries()]
 		.map(([base, displayName]) => {
 			const pokemon = currentPokeMap.get(displayName) ?? null;
-			const inSelection = decided.filter((m) => m.selection.some((n) => megaBase(n) === base));
-			const pokeWins = inSelection.filter((m) => m.result === 'win').length;
+			const inSelection = decidedGames.filter((g) => g.selection.some((n) => megaBase(n) === base));
+			const pokeWins = inSelection.filter((g) => g.result === 'win').length;
 			return {
 				name: displayName,
 				pokemon,
@@ -94,12 +99,12 @@ export function computeTeamStats(team: Team, matches: Match[]): TeamStats {
 
 	// Stats por lead propio
 	const leadMap = new Map<string, WinLoss>();
-	decided.forEach((m) => {
-		if (m.lead.length !== 2) return;
-		const key = leadKey(m.lead);
+	decidedGames.forEach((g) => {
+		if (g.lead.length !== 2) return;
+		const key = leadKey(g.lead);
 		const cur = leadMap.get(key) ?? { wins: 0, total: 0 };
 		leadMap.set(key, {
-			wins: cur.wins + (m.result === 'win' ? 1 : 0),
+			wins: cur.wins + (g.result === 'win' ? 1 : 0),
 			total: cur.total + 1
 		});
 	});
@@ -125,10 +130,10 @@ export function computeTeamStats(team: Team, matches: Match[]): TeamStats {
 
 	// Leads enemigas: winrate del rival contra ti
 	const enemyLeadMap = new Map<string, WinLoss>();
-	decided.forEach((m) => {
-		if (m.rivalLead.length !== 2) return;
-		const rivalWon = m.result === 'loss';
-		const key = leadKey(m.rivalLead);
+	decidedGames.forEach((g) => {
+		if (g.rivalLead.length !== 2) return;
+		const rivalWon = g.result === 'loss';
+		const key = leadKey(g.rivalLead);
 		const cur = enemyLeadMap.get(key) ?? { wins: 0, total: 0 };
 		enemyLeadMap.set(key, { wins: cur.wins + (rivalWon ? 1 : 0), total: cur.total + 1 });
 	});
@@ -187,6 +192,12 @@ export function filterMatches(
 	const oq = own.trim().toLowerCase();
 	return matches
 		.filter((m) => !result || m.result === result)
-		.filter((m) => !oq || m.selection.some((n) => megaBase(n.toLowerCase()).includes(megaBase(oq))))
+		.filter(
+			(m) =>
+				!oq ||
+				m.games.some((g) =>
+					g.selection.some((n) => megaBase(n.toLowerCase()).includes(megaBase(oq)))
+				)
+		)
 		.filter((m) => !rq || m.rivalTeam.some((n) => n.toLowerCase().includes(rq)));
 }

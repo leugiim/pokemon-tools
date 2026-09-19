@@ -1,4 +1,4 @@
-import type { MatchResult } from './types';
+import { MAX_GAMES, matchResult, type Game, type MatchFormat, type MatchResult } from './types';
 
 export const SELECTION_SIZE = 4;
 export const LEAD_SIZE = 2;
@@ -45,14 +45,41 @@ export function syncRivalPicks(rivalTeam: string[], picks: PickState): PickState
 	};
 }
 
+/** A game as the form holds it: the result is unset until picked. */
+export type GameDraft = Omit<Game, 'result'> & { result: MatchResult | '' };
+
+/** An empty game to start filling in. */
+export function emptyGame(): GameDraft {
+	return { result: '', selection: [], lead: [], rivalSelection: [], rivalLead: [], notes: '' };
+}
+
+/** Games after switching format: Bo1 keeps only the first, Bo3 keeps what's there. */
+export function gamesForFormat(format: MatchFormat, games: GameDraft[]): GameDraft[] {
+	const kept = games.slice(0, MAX_GAMES[format]);
+	return kept.length > 0 ? kept : [emptyGame()];
+}
+
+/** Whether another game can be added: the match isn't decided nor at its game limit. */
+export function canAddGame(format: MatchFormat, games: GameDraft[]): boolean {
+	const played = games.filter((g): g is Game => g.result !== '');
+	return games.length < MAX_GAMES[format] && matchResult(format, played) === 'ongoing';
+}
+
 /** The first thing wrong with a match about to be saved, or `null`. */
-export function validateMatch(input: {
-	result: MatchResult | '';
-	selection: string[];
-	lead: string[];
-}): string | null {
-	if (!input.result) return 'Pick the result, or mark the match as ongoing.';
-	if (input.selection.length !== SELECTION_SIZE) return 'Select exactly 4 of your Pokémon.';
-	if (input.lead.length !== LEAD_SIZE) return 'Pick your lead (2 Pokémon).';
+export function validateMatch(input: { format: MatchFormat; games: GameDraft[] }): string | null {
+	const { format, games } = input;
+	const tag = (i: number) => (format === 'bo1' ? '' : `Game ${i + 1}: `);
+
+	for (const [i, game] of games.entries()) {
+		if (!game.result) return `${tag(i)}Pick the result, or mark the game as ongoing.`;
+		if (game.selection.length !== SELECTION_SIZE)
+			return `${tag(i)}Select exactly 4 of your Pokémon.`;
+		if (game.lead.length !== LEAD_SIZE) return `${tag(i)}Pick your lead (2 Pokémon).`;
+		// Only the last game may be ongoing; earlier ones must have finished.
+		if (game.result === 'ongoing' && i < games.length - 1)
+			return `${tag(i)}Only the last game can be ongoing.`;
+		if (i > 0 && matchResult(format, games.slice(0, i) as Game[]) !== 'ongoing')
+			return `${tag(i)}The match was already decided before this game.`;
+	}
 	return null;
 }

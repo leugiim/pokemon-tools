@@ -15,13 +15,11 @@ const match = (id: string, date: number): Match => ({
 	id,
 	teamId: 't1',
 	date,
+	format: 'bo1',
 	result: 'win',
+	games: [{ result: 'win', selection: [], lead: [], rivalSelection: [], rivalLead: [] }],
 	teamRoster: [],
-	selection: [],
-	lead: [],
 	rivalTeam: [],
-	rivalSelection: [],
-	rivalLead: [],
 	notes: ''
 });
 
