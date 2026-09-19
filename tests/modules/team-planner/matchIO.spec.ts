@@ -27,7 +27,7 @@ describe('matchIO', () => {
 			date: 1700000000000,
 			result: 'win',
 			teamRoster: ['Charizard', 'Sparky', 'Froslass-Mega'],
-			selection: ['Charizard', 'Sparky'],
+			games: [{ selection: ['Charizard', 'Sparky'] }],
 			rivalTeam: ['Incineroar', 'Rillaboom'],
 			notes: 'compact'
 		});
@@ -45,6 +45,31 @@ describe('matchIO', () => {
 		);
 		const back = jsonToHistory(json, 'team-2')!;
 		expect(back.map(stripIds)).toEqual(history.map(stripIds));
+	});
+
+	it('round-trips a Bo3 with its games', () => {
+		const game = (result: 'win' | 'loss', lead: string[]) => ({
+			result,
+			selection: ['A', 'B', 'C', 'D'],
+			lead,
+			rivalSelection: ['X', 'Y'],
+			rivalLead: ['X', 'Y']
+		});
+		const bo3: Match = {
+			id: 'm',
+			teamId: 't',
+			date: 1,
+			format: 'bo3',
+			result: 'win',
+			games: [game('win', ['A', 'B']), game('loss', ['C', 'D']), game('win', ['A', 'C'])],
+			teamRoster: [],
+			rivalTeam: ['X', 'Y'],
+			notes: ''
+		};
+		const back = jsonToMatch(matchToJson(bo3), 't')!;
+		expect(stripIds(back)).toEqual(stripIds(bo3));
+		// The first game also fills the flat keys older versions read.
+		expect(JSON.parse(matchToJson(bo3))).toMatchObject({ s: ['A', 'B', 'C', 'D'], l: ['A', 'B'] });
 	});
 
 	it('omits the roster key when the roster is empty', () => {

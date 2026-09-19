@@ -103,7 +103,10 @@ _Planned; these terms come from the standalone `pokemon-team-stats` app and will
 A named roster of up to 6 Pokémon, created from a Pokepaste. Not to be confused with `TeamId`/`TeamSlot` above, which are the two sides and positions of one calculation.
 
 **Match**:
-One recorded game played with a Team: result (win, loss or ongoing), the Team's roster at that time, the **Selection** and **Lead** picked, and the **Rival**'s team, selection and lead.
+One recorded match played with a Team, either **Bo1** (one **Game**) or **Bo3** (up to three, first to two wins). Holds the Team's roster at that time and the **Rival**'s team; its result is derived from its Games (win, loss or ongoing while undecided). Matches saved before Bo3 existed read as a Bo1.
+
+**Game**:
+One game of a Match: its result and, for each side, the **Selection** and **Lead** picked. Pokémon and lead stats count Games; the win/loss totals count Matches.
 
 **Roster**:
 The 6 Pokémon a Team had when a Match was played. Frozen on the Match, so later edits to the Team don't rewrite history.

@@ -1,6 +1,6 @@
 import { readJson, removeKey, writeJson } from '$lib/modules/shared';
 import { legacyMatchToMatch, legacyTeamToTeam, type LegacyMatch, type LegacyTeam } from './legacy';
-import type { Match, Team } from './types';
+import { normalizeMatch, type Match, type Team } from './types';
 
 const TEAMS_KEY = 'pt:v1:teams';
 const matchesKey = (teamId: string) => `pt:v1:matches:${teamId}`;
@@ -42,8 +42,8 @@ export function deleteTeam(id: string): void {
 // Matches, one list per team
 
 function getMatchList(teamId: string): Match[] {
-	const stored = readJson<Match[]>(matchesKey(teamId));
-	if (stored) return stored;
+	const stored = readJson<unknown[]>(matchesKey(teamId));
+	if (stored) return stored.map(normalizeMatch);
 
 	// First access: bring over the standalone planner's matches, per-team key
 	// first and then the older global list.

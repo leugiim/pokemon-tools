@@ -1,5 +1,5 @@
 import { clampStatPoints, emptyStatPointsData, type PokemonSetData } from '$lib/modules/shared';
-import { displayName, type Match, type Team } from './types';
+import { displayName, normalizeMatch, type Game, type Match, type Team } from './types';
 
 /**
  * Shapes the standalone `pokemon-team-stats` app stored in localStorage
@@ -24,7 +24,8 @@ export interface LegacyTeam {
 	createdAt: number;
 }
 
-export type LegacyMatch = Omit<Match, 'teamRoster'> & { teamRoster?: string[] };
+export type LegacyMatch = Omit<Match, 'teamRoster' | 'format' | 'games'> &
+	Game & { teamRoster?: string[] };
 
 const EV_KEYS: Record<string, keyof ReturnType<typeof emptyStatPointsData>> = {
 	hp: 'hp',
@@ -74,10 +75,10 @@ export function legacyTeamToTeam(legacy: LegacyTeam): Team {
  * current one, which is what the old app did on first view.
  */
 export function legacyMatchToMatch(legacy: LegacyMatch, team: Team | undefined): Match {
-	return {
+	return normalizeMatch({
 		...legacy,
 		teamRoster: legacy.teamRoster?.length
 			? legacy.teamRoster
 			: (team?.pokemon ?? []).map(displayName)
-	};
+	});
 }

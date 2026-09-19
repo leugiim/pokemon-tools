@@ -37,13 +37,19 @@ const match = (over: Partial<Match> = {}): Match => ({
 	id: 'm1',
 	teamId: 't1',
 	date: 100,
+	format: 'bo1',
 	result: 'win',
+	games: [
+		{
+			result: 'win',
+			selection: ['Charizard'],
+			lead: ['Charizard'],
+			rivalSelection: [],
+			rivalLead: []
+		}
+	],
 	teamRoster: ['Charizard'],
-	selection: ['Charizard'],
-	lead: ['Charizard'],
 	rivalTeam: ['Incineroar'],
-	rivalSelection: [],
-	rivalLead: [],
 	notes: '',
 	...over
 });
@@ -80,7 +86,12 @@ describe('matches', () => {
 
 	it('insert, update, find and delete', () => {
 		saveMatch(match());
-		saveMatch(match({ result: 'loss' }));
+		saveMatch(
+			match({
+				result: 'loss',
+				games: [{ result: 'loss', selection: [], lead: [], rivalSelection: [], rivalLead: [] }]
+			})
+		);
 		expect(getMatch('m1', 't1')?.result).toBe('loss');
 		expect(getMatchesByTeam('t1')).toHaveLength(1);
 		deleteMatch('m1', 't1');
@@ -187,6 +198,15 @@ describe('migration from the standalone planner', () => {
 		const matches = getMatchesByTeam('old');
 		expect(matches.find((m) => m.id === 'a')?.teamRoster).toEqual(['Sparky', 'Froslass-Mega']);
 		expect(matches.find((m) => m.id === 'b')?.teamRoster).toEqual(['Sparky', 'Gengar']);
+	});
+
+	it('reads matches saved before Bo3 as a Bo1 of one game', () => {
+		data.set('pt:v1:matches:t1', JSON.stringify([legacyMatch('a', { teamId: 't1' })]));
+		expect(getMatchesByTeam('t1')[0]).toMatchObject({
+			format: 'bo1',
+			result: 'win',
+			games: [{ result: 'win', selection: ['Sparky'], lead: ['Sparky'] }]
+		});
 	});
 
 	it('migrates matches from the older global list, each team getting its own', () => {

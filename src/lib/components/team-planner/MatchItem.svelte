@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import Button from '$lib/components/shared/ui/Button.svelte';
-	import { formatDate, RESULT_LABELS, type Match } from '$lib/modules/team-planner';
+	import { formatDate, RESULT_LABELS, seriesScore, type Match } from '$lib/modules/team-planner';
 	import PokeIcon from './PokeIcon.svelte';
 
 	let {
@@ -16,8 +16,7 @@
 		ondelete: (match: Match) => void;
 	} = $props();
 
-	const ownBenched = $derived(match.teamRoster.filter((n) => !match.selection.includes(n)));
-	const rivalBenched = $derived(match.rivalTeam.filter((n) => !match.rivalSelection.includes(n)));
+	const benched = (roster: string[], picked: string[]) => roster.filter((n) => !picked.includes(n));
 
 	const badge = $derived(
 		match.result === 'win'
@@ -54,15 +53,29 @@
 		class="flex h-8 w-16 shrink-0 items-center justify-center rounded-md text-xs font-bold {badge}"
 	>
 		{RESULT_LABELS[match.result]}
+		{#if match.format === 'bo3'}<span class="ml-1 font-normal">{seriesScore(match.games)}</span
+			>{/if}
 	</div>
 	<div class="flex min-w-0 flex-1 flex-col gap-1">
 		<div class="text-xs text-gray-500">{formatDate(match.date)}</div>
-		{@render row('You', match.selection, match.lead, ownBenched)}
-		{#if match.rivalSelection.length > 0}
-			{@render row('Rival', match.rivalSelection, match.rivalLead, rivalBenched)}
-		{:else if match.rivalTeam.length > 0}
-			{@render row('Rival', match.rivalTeam, [], [])}
-		{/if}
+		{#each match.games as game, i (i)}
+			{#if match.format === 'bo3'}
+				<div class="mt-1 text-xs font-medium text-gray-300">
+					Game {i + 1} · {RESULT_LABELS[game.result]}
+				</div>
+			{/if}
+			{@render row('You', game.selection, game.lead, benched(match.teamRoster, game.selection))}
+			{#if game.rivalSelection.length > 0}
+				{@render row(
+					'Rival',
+					game.rivalSelection,
+					game.rivalLead,
+					benched(match.rivalTeam, game.rivalSelection)
+				)}
+			{:else if match.rivalTeam.length > 0 && i === 0}
+				{@render row('Rival', match.rivalTeam, [], [])}
+			{/if}
+		{/each}
 		{#if match.notes}
 			<p class="mt-1 text-xs whitespace-pre-wrap text-gray-300">{match.notes}</p>
 		{/if}

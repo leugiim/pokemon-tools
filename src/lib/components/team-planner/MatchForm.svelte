@@ -12,8 +12,13 @@
 		type PokemonSetData
 	} from '$lib/modules/shared';
 	import {
+		canAddGame,
 		displayName,
+		emptyGame,
+		gamesForFormat,
 		LEAD_SIZE,
+		MAX_GAMES,
+		matchResult,
 		padRivalSlots,
 		RIVAL_TEAM_SIZE,
 		planner,
@@ -23,6 +28,9 @@
 		toggleLead,
 		toggleSelection,
 		validateMatch,
+		type Game,
+		type GameDraft,
+		type MatchFormat,
 		type MatchResult,
 		type Team
 	} from '$lib/modules/team-planner';
@@ -34,6 +42,10 @@
 	let { team, matchId = undefined }: { team: Team; matchId?: string } = $props();
 
 	const RESULTS: MatchResult[] = ['win', 'loss', 'ongoing'];
+	const FORMATS: { value: MatchFormat; label: string }[] = [
+		{ value: 'bo1', label: 'Bo1' },
+		{ value: 'bo3', label: 'Bo3' }
+	];
 
 	// The saved match (when editing) seeds the fields once; they're the
 	// reader's own from then on.
@@ -42,12 +54,11 @@
 		? (planner.loadMatches(team.id).find((m) => m.id === matchId) ?? null)
 		: null;
 
-	let result = $state<MatchResult | ''>(original?.result ?? '');
-	let selection = $state(original?.selection ?? []);
-	let lead = $state(original?.lead ?? []);
+	let format = $state<MatchFormat>(original?.format ?? 'bo1');
+	let games = $state<GameDraft[]>(original ? original.games.map((g) => ({ ...g })) : [emptyGame()]);
+	// Which game of a Bo3 the fields below show.
+	let activeGame = $state(0);
 	let rivalTeam = $state(padRivalSlots(original?.rivalTeam ?? []));
-	let rivalSelection = $state(original?.rivalSelection ?? []);
-	let rivalLead = $state(original?.rivalLead ?? []);
 	let notes = $state(original?.notes ?? '');
 	// Full rival sets, from a pasted team or edited in the calculator.
 	let rivalSets = $state<PokemonSetData[]>(original?.rivalSets ?? []);
@@ -60,6 +71,8 @@
 	const handoffId = generateId();
 	let error = $state('');
 
+	const game = $derived(games[activeGame]);
+	const canAdd = $derived(canAddGame(format, games));
 	const ownNames = $derived(team.pokemon.map(displayName));
 	const rivalFilled = $derived(rivalTeam.map((n) => n.trim()).filter(Boolean));
 	const speciesByName = $derived(
@@ -67,23 +80,45 @@
 	);
 	const backHref = $derived(resolve('/teams/[id]', { id: team.id }));
 
+	function setFormat(next: MatchFormat) {
+		format = next;
+		games = gamesForFormat(next, games);
+		activeGame = Math.min(activeGame, games.length - 1);
+	}
+
+	function addGame() {
+		if (!canAdd) return;
+		// A new game starts from the same picks, which usually change little.
+		const previous = games[games.length - 1];
+		games = [...games, { ...previous, result: '' }];
+		activeGame = games.length - 1;
+	}
+
+	function removeGame(i: number) {
+		if (games.length <= 1) return;
+		games = games.filter((_, index) => index !== i);
+		activeGame = Math.min(activeGame, games.length - 1);
+	}
+
 	function pickOwn(name: string) {
-		({ selection, lead } = toggleSelection({ selection, lead }, name));
+		({ selection: game.selection, lead: game.lead } = toggleSelection(game, name));
 	}
 
 	function pickRival(name: string) {
-		({ selection: rivalSelection, lead: rivalLead } = toggleSelection(
-			{ selection: rivalSelection, lead: rivalLead },
+		({ selection: game.rivalSelection, lead: game.rivalLead } = toggleSelection(
+			{ selection: game.rivalSelection, lead: game.rivalLead },
 			name
 		));
 	}
 
-	// Changing a rival's name only drops the picks that no longer exist.
+	// Changing a rival's name only drops the picks that no longer exist, in every game.
 	function onRivalChange() {
-		({ selection: rivalSelection, lead: rivalLead } = syncRivalPicks(rivalTeam, {
-			selection: rivalSelection,
-			lead: rivalLead
-		}));
+		for (const g of games) {
+			({ selection: g.rivalSelection, lead: g.rivalLead } = syncRivalPicks(rivalTeam, {
+				selection: g.rivalSelection,
+				lead: g.rivalLead
+			}));
+		}
 	}
 
 	const norm = (name: string) => name.trim().toLowerCase();
@@ -111,9 +146,9 @@
 			teamId: team.id,
 			teamName: team.name,
 			own,
-			ownLead: lead,
+			ownLead: game.lead,
 			rival,
-			rivalLead
+			rivalLead: game.rivalLead
 		});
 		if (!stored) {
 			error = "Couldn't open the calculator (browser storage unavailable).";
@@ -173,8 +208,10 @@
 
 	function save() {
 		if (!applyPendingRivalPaste()) return;
-		error = validateMatch({ result, selection, lead }) ?? '';
-		if (error || !result) return;
+		error = validateMatch({ format, games }) ?? '';
+		if (error) return;
+		// Validated: every game has its result now.
+		const saved = games as Game[];
 
 		planner.saveMatch({
 			// Editing keeps the rival sets and paste that this form doesn't show.
@@ -182,13 +219,11 @@
 			id: original?.id ?? generateId(),
 			teamId: team.id,
 			date: original?.date ?? Date.now(),
-			result,
+			format,
+			games: saved,
+			result: matchResult(format, saved),
 			teamRoster: original?.teamRoster ?? ownNames,
-			selection,
-			lead,
 			rivalTeam: rivalFilled,
-			rivalSelection,
-			rivalLead,
 			// Only the sets of Pokémon that are still on the opposing team.
 			rivalSets: rivalSets.some((set) => rivalFilled.some((name) => isSetOf(set, name)))
 				? rivalSets.filter((set) => rivalFilled.some((name) => isSetOf(set, name)))
@@ -207,13 +242,59 @@
 
 <div class="flex flex-col gap-6">
 	<section class="flex flex-col gap-2">
-		<span class={label}>Result</span>
+		<span class={label}>Format</span>
+		<div class="flex gap-2">
+			{#each FORMATS as f (f.value)}
+				<Button
+					class={format === f.value ? 'ring-2 ring-sky-500' : ''}
+					variant={format === f.value ? 'primary' : 'secondary'}
+					onclick={() => setFormat(f.value)}
+				>
+					{f.label}
+				</Button>
+			{/each}
+		</div>
+	</section>
+
+	{#if format === 'bo3'}
+		<section class="flex flex-wrap items-center gap-2" aria-label="Games">
+			{#each games as g, i (i)}
+				<Button
+					size="sm"
+					class={activeGame === i ? 'ring-2 ring-sky-500' : ''}
+					variant={activeGame === i ? 'primary' : 'secondary'}
+					onclick={() => (activeGame = i)}
+				>
+					Game {i + 1}{g.result ? ` · ${RESULT_LABELS[g.result]}` : ''}
+				</Button>
+			{/each}
+			{#if canAdd}
+				<Button size="sm" onclick={addGame}>+ Add game {games.length + 1}</Button>
+			{/if}
+			{#if games.length > 1}
+				<Button size="sm" variant="danger" onclick={() => removeGame(activeGame)}>
+					Remove game {activeGame + 1}
+				</Button>
+			{/if}
+			<span class={hint}
+				>Match: {RESULT_LABELS[
+					matchResult(
+						format,
+						games.filter((g): g is Game => g.result !== '')
+					)
+				]} (max {MAX_GAMES[format]} games)</span
+			>
+		</section>
+	{/if}
+
+	<section class="flex flex-col gap-2">
+		<span class={label}>{format === 'bo3' ? `Game ${activeGame + 1} result` : 'Result'}</span>
 		<div class="flex gap-2">
 			{#each RESULTS as r (r)}
 				<Button
-					class={result === r ? 'ring-2 ring-sky-500' : ''}
-					variant={result === r ? 'primary' : 'secondary'}
-					onclick={() => (result = r)}
+					class={game.result === r ? 'ring-2 ring-sky-500' : ''}
+					variant={game.result === r ? 'primary' : 'secondary'}
+					onclick={() => (game.result = r)}
 				>
 					{RESULT_LABELS[r]}
 				</Button>
@@ -223,20 +304,25 @@
 
 	<section class="flex flex-col gap-2">
 		<span class={label}>
-			Your selection <span class={hint}>({selection.length}/{SELECTION_SIZE} selected)</span>
+			Your selection <span class={hint}>({game.selection.length}/{SELECTION_SIZE} selected)</span>
 		</span>
-		<PokeToggleGroup names={ownNames} selected={selection} ontoggle={pickOwn} {speciesByName} />
+		<PokeToggleGroup
+			names={ownNames}
+			selected={game.selection}
+			ontoggle={pickOwn}
+			{speciesByName}
+		/>
 	</section>
 
-	{#if selection.length === SELECTION_SIZE}
+	{#if game.selection.length === SELECTION_SIZE}
 		<section class="flex flex-col gap-2">
 			<span class={label}
-				>Your lead <span class={hint}>({lead.length}/{LEAD_SIZE} selected)</span></span
+				>Your lead <span class={hint}>({game.lead.length}/{LEAD_SIZE} selected)</span></span
 			>
 			<PokeToggleGroup
-				names={selection}
-				selected={lead}
-				ontoggle={(name) => (lead = toggleLead(lead, name))}
+				names={game.selection}
+				selected={game.lead}
+				ontoggle={(name) => (game.lead = toggleLead(game.lead, name))}
 				{speciesByName}
 			/>
 		</section>
@@ -271,19 +357,19 @@
 
 		{#if rivalFilled.length >= 2}
 			<span class="{label} mt-2">
-				Opposing selection <span class={hint}>({rivalSelection.length}/{SELECTION_SIZE})</span>
+				Opposing selection <span class={hint}>({game.rivalSelection.length}/{SELECTION_SIZE})</span>
 			</span>
-			<PokeToggleGroup names={rivalFilled} selected={rivalSelection} ontoggle={pickRival} />
+			<PokeToggleGroup names={rivalFilled} selected={game.rivalSelection} ontoggle={pickRival} />
 		{/if}
 
-		{#if rivalSelection.length >= 2}
+		{#if game.rivalSelection.length >= 2}
 			<span class="{label} mt-2">
-				Opposing lead <span class={hint}>({rivalLead.length}/{LEAD_SIZE})</span>
+				Opposing lead <span class={hint}>({game.rivalLead.length}/{LEAD_SIZE})</span>
 			</span>
 			<PokeToggleGroup
-				names={rivalSelection}
-				selected={rivalLead}
-				ontoggle={(name) => (rivalLead = toggleLead(rivalLead, name))}
+				names={game.rivalSelection}
+				selected={game.rivalLead}
+				ontoggle={(name) => (game.rivalLead = toggleLead(game.rivalLead, name))}
 			/>
 		{/if}
 	</section>
