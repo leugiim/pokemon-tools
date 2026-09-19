@@ -16,10 +16,17 @@
 	} from '$lib/modules/damage-calculator/calc/items';
 	import { field } from '$lib/modules/damage-calculator/stores/field.svelte';
 	import { exportPokePaste, importPokePaste } from '$lib/modules/damage-calculator/calc/pokepaste';
+	import BookOpen from '@lucide/svelte/icons/book-open';
+	import ClipboardCopy from '@lucide/svelte/icons/clipboard-copy';
+	import ClipboardPaste from '@lucide/svelte/icons/clipboard-paste';
+	import Gauge from '@lucide/svelte/icons/gauge';
+	import Save from '@lucide/svelte/icons/save';
+	import IconButton from '$lib/components/shared/ui/IconButton.svelte';
 	import AbilityCombobox from '../combobox/AbilityCombobox.svelte';
 	import PokemonCombobox from '$lib/components/shared/species/PokemonCombobox.svelte';
 	import CommonSetsModal from './CommonSetsModal.svelte';
 	import SpeedCheckModal from './SpeedCheckModal.svelte';
+	import TypeMatchupsModal from './TypeMatchupsModal.svelte';
 	import FormeCombobox from '../combobox/FormeCombobox.svelte';
 	import GenderToggle from './GenderToggle.svelte';
 	import ItemCombobox from '../combobox/ItemCombobox.svelte';
@@ -28,6 +35,7 @@
 	import SpeciesSprite from '$lib/components/shared/species/SpeciesSprite.svelte';
 	import StatPointBars from './StatPointBars.svelte';
 	import TypeBadge from '../display/TypeBadge.svelte';
+	import { Swords } from '@lucide/svelte';
 
 	// slot is $bindable: this component two-way-binds into its properties
 	// (slot.species, slot.nature, slot.statPoints, ...) via child bind:
@@ -164,6 +172,7 @@
 
 	let commonSetsOpen = $state(false);
 	let speedCheckOpen = $state(false);
+	let matchupsOpen = $state(false);
 
 	/**
 	 * Applies a common set, then puts the slot in the forme its item calls
@@ -265,7 +274,7 @@
 	</div>
 
 	<!-- Moves. -->
-	<div class="flex min-w-0 flex-1 flex-col gap-1">
+	<div class="flex min-w-0 flex-1 flex-col gap-1 @3xl:self-stretch">
 		<div class="flex items-center gap-2 text-[10px] font-medium text-gray-300">
 			<span class="flex-1">Move</span>
 			<span class="w-20 shrink-0 text-center">Type</span>
@@ -275,52 +284,6 @@
 		{#each [0, 1, 2, 3] as i (i)}
 			<MoveSlot bind:selected={slot.moves[i]} {disabled} attacker={slot} moveIndex={i} />
 		{/each}
-		<div class="mt-1 flex gap-1">
-			<button
-				type="button"
-				{disabled}
-				title="Copy this Pokémon as a PokePaste"
-				onclick={copyPokePaste}
-				class="self-start rounded border border-gray-700 bg-gray-800 px-2 py-1 text-[10px] text-gray-300 hover:bg-gray-700 disabled:pointer-events-none disabled:opacity-30"
-			>
-				{copied ? 'Copied!' : 'Export'}
-			</button>
-			<button
-				type="button"
-				title="Import a PokePaste into this slot"
-				onclick={() => (importOpen = !importOpen)}
-				class="self-start rounded border border-gray-700 bg-gray-800 px-2 py-1 text-[10px] text-gray-300 hover:bg-gray-700"
-			>
-				Import
-			</button>
-			<button
-				type="button"
-				disabled={!hasCommonSets(slot.species)}
-				title="Load a curated common set for this Pokémon"
-				onclick={() => (commonSetsOpen = true)}
-				class="self-start rounded border border-gray-700 bg-gray-800 px-2 py-1 text-[10px] text-gray-300 hover:bg-gray-700 disabled:pointer-events-none disabled:opacity-30"
-			>
-				Common Sets
-			</button>
-			<button
-				type="button"
-				{disabled}
-				title="See where this Pokémon stands in Speed"
-				onclick={() => (speedCheckOpen = true)}
-				class="self-start rounded border border-gray-700 bg-gray-800 px-2 py-1 text-[10px] text-gray-300 hover:bg-gray-700 disabled:pointer-events-none disabled:opacity-30"
-			>
-				Check speed
-			</button>
-			<button
-				type="button"
-				disabled={addBlockedReason !== null}
-				title={addBlockedReason ?? 'Save this Pokémon in the team above'}
-				onclick={() => roster.add(slotIndex)}
-				class="self-start rounded border border-sky-700 bg-sky-900/40 px-2 py-1 text-[10px] text-sky-200 hover:bg-sky-800/60 disabled:border-gray-700 disabled:bg-gray-800 disabled:text-gray-300 disabled:opacity-30"
-			>
-				Save
-			</button>
-		</div>
 		{#if pasteFallback}
 			<textarea
 				readonly
@@ -359,9 +322,56 @@
 				</button>
 			</div>
 		{/if}
+		<div class="mt-auto flex justify-end gap-1 pt-1">
+			<IconButton
+				icon={ClipboardCopy}
+				label={copied ? 'Copied!' : 'Export'}
+				description="Copy this Pokémon as a PokePaste"
+				{disabled}
+				onclick={copyPokePaste}
+			/>
+			<IconButton
+				icon={ClipboardPaste}
+				label="Import"
+				description="Import a PokePaste into this slot"
+				onclick={() => (importOpen = !importOpen)}
+			/>
+			<IconButton
+				icon={BookOpen}
+				label="Common Sets"
+				description="Load a curated common set for this Pokémon"
+				disabled={!hasCommonSets(slot.species)}
+				onclick={() => (commonSetsOpen = true)}
+			/>
+			<IconButton
+				icon={Gauge}
+				label="Check speed"
+				description="See where this Pokémon stands in Speed"
+				{disabled}
+				onclick={() => (speedCheckOpen = true)}
+			/>
+			<IconButton
+				icon={Swords}
+				label="Matchups"
+				description="See this Pokémon's weaknesses and resistances"
+				{disabled}
+				onclick={() => (matchupsOpen = true)}
+			/>
+			<IconButton
+				icon={Save}
+				label="Save"
+				description={addBlockedReason ?? 'Save this Pokémon in the team above'}
+				variant="primary"
+				disabled={addBlockedReason !== null}
+				onclick={() => roster.add(slotIndex)}
+			/>
+		</div>
 	</div>
 </div>
 
+{#if matchupsOpen}
+	<TypeMatchupsModal {slot} onclose={() => (matchupsOpen = false)} />
+{/if}
 {#if speedCheckOpen}
 	<SpeedCheckModal {slot} {tailwind} onclose={() => (speedCheckOpen = false)} />
 {/if}
