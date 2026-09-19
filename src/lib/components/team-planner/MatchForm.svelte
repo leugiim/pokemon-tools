@@ -88,9 +88,7 @@
 
 	function addGame() {
 		if (!canAdd) return;
-		// A new game starts from the same picks, which usually change little.
-		const previous = games[games.length - 1];
-		games = [...games, { ...previous, result: '' }];
+		games = [...games, emptyGame()];
 		activeGame = games.length - 1;
 	}
 
@@ -243,12 +241,6 @@
 <div class="flex flex-col gap-6">
 	<section class="flex flex-col gap-2">
 		<span class={label}>Opposing team <span class={hint}>(optional, up to 6 Pokémon)</span></span>
-		<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-			{#each [...rivalTeam.keys()] as i (i)}
-				<SpeciesField bind:value={rivalTeam[i]} onchange={onRivalChange} />
-			{/each}
-		</div>
-
 		<details class="text-sm" bind:open={pasteOpen}>
 			<summary class="cursor-pointer text-gray-300">Paste the opposing team (optional)</summary>
 			<div class="mt-2 flex flex-col gap-2">
@@ -267,6 +259,23 @@
 				{rivalNotice}
 			</p>
 		{/if}
+
+		<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+			{#each [...rivalTeam.keys()] as i (i)}
+				<SpeciesField bind:value={rivalTeam[i]} onchange={onRivalChange} />
+			{/each}
+		</div>
+	</section>
+
+	<section class="flex flex-col gap-2">
+		<span class={label}>Calculator</span>
+		<div class="flex flex-wrap items-center gap-3">
+			<Button onclick={openCalculator}>Open in calculator</Button>
+			<span class={hint}>
+				Opens in a new tab with your whole team and the opposing team ({rivalFilled.length}
+				named, {rivalSets.length} with a set). Nothing you typed here is lost.
+			</span>
+		</div>
 	</section>
 
 	<section class="flex flex-col gap-2">
@@ -374,17 +383,6 @@
 				ontoggle={(name) => (game.rivalLead = toggleLead(game.rivalLead, name))}
 			/>
 		{/if}
-	</section>
-
-	<section class="flex flex-col gap-2">
-		<span class={label}>Calculator</span>
-		<div class="flex flex-wrap items-center gap-3">
-			<Button onclick={openCalculator}>Open in calculator</Button>
-			<span class={hint}>
-				Opens in a new tab with your whole team and the opposing team ({rivalFilled.length}
-				named, {rivalSets.length} with a set). Nothing you typed here is lost.
-			</span>
-		</div>
 	</section>
 
 	<section class="flex flex-col gap-1">
