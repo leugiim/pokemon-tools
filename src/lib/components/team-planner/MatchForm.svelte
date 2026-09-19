@@ -55,11 +55,18 @@
 		: null;
 
 	let format = $state<MatchFormat>(original?.format ?? 'bo1');
-	let games = $state<GameDraft[]>(original ? original.games.map((g) => ({ ...g })) : [emptyGame()]);
+	// A Bo3 saved with match-level notes (before they were per game) shows them on game 1.
+	const initialGames: GameDraft[] = original
+		? original.games.map((g, i) => ({
+				...g,
+				notes: (i === 0 && original.format === 'bo3' && !g.notes ? original.notes : g.notes) ?? ''
+			}))
+		: [emptyGame()];
+	let games = $state<GameDraft[]>(initialGames);
 	// Which game of a Bo3 the fields below show.
 	let activeGame = $state(0);
 	let rivalTeam = $state(padRivalSlots(original?.rivalTeam ?? []));
-	let notes = $state(original?.notes ?? '');
+	let notes = $state(original?.format === 'bo3' ? '' : (original?.notes ?? ''));
 	// Full rival sets, from a pasted team or edited in the calculator.
 	let rivalSets = $state<PokemonSetData[]>(original?.rivalSets ?? []);
 	let rivalPaste = $state(original?.rivalPaste ?? '');
