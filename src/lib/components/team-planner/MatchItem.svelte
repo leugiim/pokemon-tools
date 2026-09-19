@@ -59,27 +59,34 @@
 	<div class="flex min-w-0 flex-1 flex-col gap-1">
 		<div class="text-xs text-gray-500">{formatDate(match.date)}</div>
 		{#each match.games as game, i (i)}
-			{#if match.format === 'bo3'}
-				<div class="mt-1 text-xs font-medium text-gray-300">
-					Game {i + 1} · {RESULT_LABELS[game.result]}
+			{@const notes = match.format === 'bo3' ? game.notes : i === 0 ? match.notes : ''}
+			<div class="flex flex-col gap-1 sm:flex-row sm:gap-4">
+				<div class="flex min-w-0 flex-col gap-1">
+					{#if match.format === 'bo3'}
+						<div class="mt-1 text-xs font-medium text-gray-300">
+							Game {i + 1} · {RESULT_LABELS[game.result]}
+						</div>
+					{/if}
+					{@render row('You', game.selection, game.lead, benched(match.teamRoster, game.selection))}
+					{#if game.rivalSelection.length > 0}
+						{@render row(
+							'Rival',
+							game.rivalSelection,
+							game.rivalLead,
+							benched(match.rivalTeam, game.rivalSelection)
+						)}
+					{:else if match.rivalTeam.length > 0 && i === 0}
+						{@render row('Rival', match.rivalTeam, [], [])}
+					{/if}
 				</div>
-			{/if}
-			{@render row('You', game.selection, game.lead, benched(match.teamRoster, game.selection))}
-			{#if game.rivalSelection.length > 0}
-				{@render row(
-					'Rival',
-					game.rivalSelection,
-					game.rivalLead,
-					benched(match.rivalTeam, game.rivalSelection)
-				)}
-			{:else if match.rivalTeam.length > 0 && i === 0}
-				{@render row('Rival', match.rivalTeam, [], [])}
-			{/if}
-			{#if game.notes}
-				<p class="text-xs whitespace-pre-wrap text-gray-300">{game.notes}</p>
-			{/if}
+				{#if notes}
+					<p class="min-w-0 flex-1 text-xs whitespace-pre-wrap text-gray-300 sm:self-center">
+						{notes}
+					</p>
+				{/if}
+			</div>
 		{/each}
-		{#if match.notes}
+		{#if match.format === 'bo3' && match.notes}
 			<p class="mt-1 text-xs whitespace-pre-wrap text-gray-300">{match.notes}</p>
 		{/if}
 	</div>
