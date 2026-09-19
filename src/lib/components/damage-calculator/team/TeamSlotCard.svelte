@@ -19,6 +19,7 @@
 	import AbilityCombobox from '../combobox/AbilityCombobox.svelte';
 	import PokemonCombobox from '$lib/components/shared/species/PokemonCombobox.svelte';
 	import CommonSetsModal from './CommonSetsModal.svelte';
+	import SpeedCheckModal from './SpeedCheckModal.svelte';
 	import FormeCombobox from '../combobox/FormeCombobox.svelte';
 	import GenderToggle from './GenderToggle.svelte';
 	import ItemCombobox from '../combobox/ItemCombobox.svelte';
@@ -162,6 +163,7 @@
 	}
 
 	let commonSetsOpen = $state(false);
+	let speedCheckOpen = $state(false);
 
 	function selectCommonSet(set: CommonSet) {
 		applyCommonSet(slot, set);
@@ -279,6 +281,15 @@
 			</button>
 			<button
 				type="button"
+				{disabled}
+				title="See where this Pokémon stands in Speed"
+				onclick={() => (speedCheckOpen = true)}
+				class="self-start rounded border border-gray-700 bg-gray-800 px-2 py-1 text-[10px] text-gray-300 hover:bg-gray-700 disabled:pointer-events-none disabled:opacity-30"
+			>
+				Check speed
+			</button>
+			<button
+				type="button"
 				disabled={addBlockedReason !== null}
 				title={addBlockedReason ?? 'Save this Pokémon in the team above'}
 				onclick={() => roster.add(slotIndex)}
@@ -328,4 +339,7 @@
 	</div>
 </div>
 
+{#if speedCheckOpen}
+	<SpeedCheckModal {slot} {tailwind} onclose={() => (speedCheckOpen = false)} />
+{/if}
 <CommonSetsModal bind:open={commonSetsOpen} species={slot.species} onselect={selectCommonSet} />
