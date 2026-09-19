@@ -10,6 +10,7 @@
 	import { sides } from '$lib/modules/damage-calculator/stores/team.svelte';
 	import {
 		FIELD_ABILITY_FLAGS,
+		fieldAbilityEffect,
 		fieldAbilityName,
 		providesFieldAbility,
 		type FieldAbilityFlag
@@ -134,6 +135,8 @@
 				title={tooltip(flag)}
 			>
 				{ability}
+				{#if fieldAbilityEffect(flag)}<span class="ml-1 opacity-70">{fieldAbilityEffect(flag)}</span
+					>{/if}
 			</ToggleButton>
 		{/each}
 	</div>

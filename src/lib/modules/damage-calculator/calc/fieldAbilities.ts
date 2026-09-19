@@ -32,6 +32,18 @@ export function fieldAbilityName(flag: FieldAbilityFlag): string {
 	return FIELD_ABILITIES[flag];
 }
 
+/** The stat each Ruin ability lowers, as short button text. Fairy Aura has none. */
+const FIELD_ABILITY_EFFECTS: Partial<Record<FieldAbilityFlag, string>> = {
+	vesselOfRuin: '-SpA',
+	tabletsOfRuin: '-Atk',
+	swordOfRuin: '-Def',
+	beadsOfRuin: '-SpD'
+};
+
+export function fieldAbilityEffect(flag: FieldAbilityFlag): string | null {
+	return FIELD_ABILITY_EFFECTS[flag] ?? null;
+}
+
 /**
  * Whether `flag`'s ability is currently active anywhere on the field:
  * `field`'s manual override when set, else auto-derived from whether any of
