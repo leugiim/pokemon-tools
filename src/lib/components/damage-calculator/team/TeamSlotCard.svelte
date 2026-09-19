@@ -230,7 +230,7 @@
 			</div>
 			<div class="flex h-4 flex-col items-center justify-center gap-1">
 				{#if slot.species}
-					{#each slot.species.types as type (type)}
+					{#each slot.types as type (type)}
 						<TypeBadge {type} />
 					{/each}
 				{/if}

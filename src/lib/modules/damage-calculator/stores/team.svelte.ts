@@ -1,3 +1,4 @@
+import { hasTypeShift } from '../calc/typeShift';
 import type { SpeciesItem } from '$lib/modules/shared/species/generation';
 import type { HeldItem } from '$lib/modules/damage-calculator/calc/items';
 import type { MoveItem } from '$lib/modules/damage-calculator/calc/moves';
@@ -167,6 +168,12 @@ export class TeamSlot {
 	/** In-battle stat stages (-6..+6, 0 by default) — a "what if" on top of `statPoints`, not part of the build itself; see `StatPointBars`. */
 	boosts = $state<StatBoosts>(emptyStatBoosts());
 	/**
+	 * The type a Protean/Libero holder currently has (`null` = Auto: the
+	 * ability's own "STAB on every move"). A "what if" like `boosts`, and
+	 * only in effect while the ability is one of those — see `shiftedType`.
+	 */
+	currentType = $state<string | null>(null);
+	/**
 	 * Fainted allies (0-5) — the stack count behind Supreme Overlord and
 	 * Last Respects. A "what if" on top of the build, like `boosts`.
 	 */
@@ -187,6 +194,16 @@ export class TeamSlot {
 		const slot = new TeamSlot();
 		applySetData(slot, data);
 		return slot;
+	}
+
+	/** `currentType`, when this slot's ability makes it count. */
+	get shiftedType(): string | null {
+		return hasTypeShift(this.ability) ? this.currentType : null;
+	}
+
+	/** The slot's types as they are right now: the species', or the one it shifted to. */
+	get types(): string[] {
+		return this.shiftedType ? [this.shiftedType] : [...(this.#species?.types ?? [])];
 	}
 
 	/** This slot's build as plain data, or `null` while it has no species. */
@@ -212,6 +229,7 @@ export class TeamSlot {
 			value !== null && this.#species !== null && familyOf(value) === familyOf(this.#species);
 		this.#species = value;
 		this.ability = null;
+		this.currentType = null;
 		if (!sameFamily) {
 			this.item = null;
 			this.nature = NEUTRAL_NATURE;

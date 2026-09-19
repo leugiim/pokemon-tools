@@ -74,6 +74,7 @@ export function applySetData(slot: TeamSlot, data: PokemonSetData): string[] {
 	for (const stat of STAT_ORDER) statPoints[stat] = clampStatPoints(data.statPoints[stat] ?? 0);
 	slot.statPoints = statPoints;
 	slot.boosts = emptyStatBoosts();
+	slot.currentType = null;
 
 	const moves: MoveSlots = [null, null, null, null];
 	data.moves.slice(0, moves.length).forEach((name, i) => {

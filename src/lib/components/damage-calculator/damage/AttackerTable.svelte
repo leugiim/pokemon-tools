@@ -12,6 +12,9 @@
 		type MultiHitRange
 	} from '$lib/modules/damage-calculator/calc/moves';
 	import type { DamageMatrixAttacker } from '$lib/modules/damage-calculator/calc/matrix';
+	import { ATTACK_TYPES } from '$lib/modules/damage-calculator/calc/typeMatchups';
+	import { hasTypeShift } from '$lib/modules/damage-calculator/calc/typeShift';
+	import TypePicker from '../display/TypePicker.svelte';
 	import DamageResult from './DamageResult.svelte';
 	import SpeciesSprite from '$lib/components/shared/species/SpeciesSprite.svelte';
 	import NumberStepper from '$lib/components/shared/ui/NumberStepper.svelte';
@@ -124,23 +127,39 @@
 				{/if}
 				{labelFor(attacker)}
 			</h3>
-			<!-- Only Supreme Overlord and Last Respects read this. -->
-			{#if usesAlliesFainted}
-				<span class="flex items-center gap-1.5 text-[11px] text-gray-400">
-					Fainted allies
-					<NumberStepper
-						value={attacker.alliesFainted}
-						min={0}
-						max={MAX_ALLIES_FAINTED}
-						ariaLabel="fainted allies for {labelFor(attacker)}"
-						onChange={(n) =>
-							(attacker.alliesFainted = Math.min(
-								MAX_ALLIES_FAINTED,
-								Math.max(0, Math.round(n) || 0)
-							))}
-					/>
-				</span>
-			{/if}
+			<div class="flex items-center gap-3">
+				<!-- Protean/Libero: which type it has right now (Auto = STAB on every move). -->
+				{#if hasTypeShift(attacker.ability)}
+					<span
+						class="flex items-center gap-1.5 text-[11px] text-gray-400"
+						title="The type this Pokémon has right now. Auto gives STAB on every move."
+					>
+						Current type
+						<TypePicker
+							bind:value={attacker.currentType}
+							types={ATTACK_TYPES}
+							ariaLabel="current type for {labelFor(attacker)}"
+						/>
+					</span>
+				{/if}
+				<!-- Only Supreme Overlord and Last Respects read this. -->
+				{#if usesAlliesFainted}
+					<span class="flex items-center gap-1.5 text-[11px] text-gray-400">
+						Fainted allies
+						<NumberStepper
+							value={attacker.alliesFainted}
+							min={0}
+							max={MAX_ALLIES_FAINTED}
+							ariaLabel="fainted allies for {labelFor(attacker)}"
+							onChange={(n) =>
+								(attacker.alliesFainted = Math.min(
+									MAX_ALLIES_FAINTED,
+									Math.max(0, Math.round(n) || 0)
+								))}
+						/>
+					</span>
+				{/if}
+			</div>
 		</div>
 		{#if opponents.length === 0}
 			<p class="text-[11px] text-gray-500">Pick a species for at least one opposing Pokémon.</p>
