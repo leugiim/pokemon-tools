@@ -67,13 +67,14 @@ describe('commonSetsFor', () => {
 		expect(set.item).toBeNull();
 	});
 
-	it("lists a Mega Evolution's sets under its base species, holding the Mega Stone as the item", () => {
+	it("lists a Mega Evolution's sets from its base species, all of them", () => {
 		// Charizard's Mega Y sets live under "Charizard" in the vendored
-		// data, not a "Charizard-Mega-Y" key of their own (ADR-0006) — same
-		// as megaStoneFor's own species/item split (items.spec.ts).
+		// data, not a "Charizard-Mega-Y" key of their own (ADR-0006).
 		const sets = commonSetsFor(species('Charizard'));
 		expect(sets.some((s) => s.item?.name === 'Charizardite Y')).toBe(true);
-		expect(commonSetsFor(species('Charizard-Mega-Y'))).toEqual([]);
+
+		const mega = commonSetsFor(species('Charizard-Mega-Y'));
+		expect(mega.map((s) => s.name)).toEqual(sets.map((s) => s.name));
 	});
 });
 

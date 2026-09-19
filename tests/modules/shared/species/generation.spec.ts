@@ -51,8 +51,9 @@ describe('pickableSpecies', () => {
 
 	it('keeps genuine regional forms as their own entries', () => {
 		const names = pickableSpecies.map((s) => s.name);
-		expect(names).toContain('Meowth-Galar');
-		expect(names).toContain('Meowth-Alola');
+		expect(names).toContain('Slowbro-Galar');
+		expect(names).toContain('Ninetales-Alola');
+		expect(names).toContain('Arcanine-Hisui');
 	});
 
 	it('offers Aegislash as a single entry (its default Shield stance), not two', () => {
@@ -61,22 +62,19 @@ describe('pickableSpecies', () => {
 		expect(names).not.toContain('Aegislash-Blade');
 	});
 
-	it('folds stance/state/item-triggered formes into one entry (e.g. Landorus, not Landorus-Therian too)', () => {
+	it('folds stance/state formes into one entry (e.g. Rotom, not Rotom-Wash too)', () => {
 		const names = pickableSpecies.map((s) => s.name);
-		expect(names).toContain('Landorus');
-		expect(names).not.toContain('Landorus-Therian');
-		expect(names).toContain('Arceus');
-		expect(names).not.toContain('Arceus-Fire');
-		expect(names).toContain('Urshifu');
-		expect(names).not.toContain('Urshifu-Rapid-Strike');
+		expect(names).toContain('Rotom');
+		expect(names).not.toContain('Rotom-Wash');
+		expect(names).toContain('Toxtricity');
+		expect(names).not.toContain('Toxtricity-Low-Key');
 	});
 
-	it('keeps Kantonian and Galarian Darmanitan as separate entries, each with its own Zen forme folded in', () => {
+	it("only offers Regulation M-C's species", () => {
 		const names = pickableSpecies.map((s) => s.name);
-		expect(names).toContain('Darmanitan');
-		expect(names).toContain('Darmanitan-Galar');
-		expect(names).not.toContain('Darmanitan-Zen');
-		expect(names).not.toContain('Darmanitan-Galar-Zen');
+		expect(names).not.toContain('Landorus');
+		expect(names).not.toContain('Arceus');
+		expect(names).not.toContain('Zygarde-Complete');
 	});
 
 	it('excludes Totem formes entirely — nobody can actually own one', () => {
@@ -84,13 +82,6 @@ describe('pickableSpecies', () => {
 		expect(names).not.toContain('Kommo-o-Totem');
 		expect(names).not.toContain('Mimikyu-Totem');
 		expect(names).not.toContain('Marowak-Alola-Totem');
-	});
-
-	it('keeps only Zygarde-Complete', () => {
-		const names = pickableSpecies.map((s) => s.name);
-		expect(names).toContain('Zygarde-Complete');
-		expect(names).not.toContain('Zygarde');
-		expect(names).not.toContain('Zygarde-10%');
 	});
 
 	it('keeps only plain Pikachu, dropping the cosmetic event caps', () => {

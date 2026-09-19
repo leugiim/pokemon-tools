@@ -312,6 +312,14 @@ const FORM_FAMILIES: { label: string; name: string }[][] = [
 		{ label: 'Large', name: 'Gourgeist-Large' },
 		{ label: 'Super', name: 'Gourgeist-Super' }
 	],
+	// Floette-Eternal is the Floette that has a Mega (Floettite), and the only
+	// one in Champions — the data makes it a forme of Floette, so it gets a
+	// family instead of a picker entry of its own.
+	[
+		{ label: 'Normal', name: 'Floette' },
+		{ label: 'Eternal', name: 'Floette-Eternal' },
+		{ label: 'Mega', name: 'Floette-Mega' }
+	],
 	// Meowstic's Mega is gendered — one family per gender, kept in sync
 	// with the gender toggle via GENDER_PAIRS below.
 	[
@@ -392,9 +400,28 @@ const EXCLUDED_FROM_PICKER = new Set([
 	'Pikachu-World'
 ]);
 
-/** Species selectable directly in the main Pokémon picker. */
+/**
+ * The regulation this app's Pokémon picker follows: Pokémon Champions'
+ * Regulation M-C. `@smogon/calc`'s Champions data has no notion of
+ * regulations, so its roster stands in for M-C's legal pool.
+ */
+export const CURRENT_REGULATION = 'M-C';
+
+const championsNames = new Set<string>([...championsGen.species].map((s) => s.name));
+
+/**
+ * Whether Regulation M-C allows `species` — itself, or (for a hand-rolled
+ * forme family like Floette's) any forme of its family.
+ */
+function inRegulation(species: SpeciesItem): boolean {
+	if (championsNames.has(species.name)) return true;
+	return familyByMemberName.get(species.name)?.some((m) => championsNames.has(m.name)) ?? false;
+}
+
+/** Species selectable directly in the main Pokémon picker: Regulation M-C's, one per family. */
 export const pickableSpecies = allSpecies.filter(
 	(s) =>
+		inRegulation(s) &&
 		!isBattleOnlyForme(s) &&
 		!isTotemForme(s) &&
 		!nonDefaultFamilyMembers.has(s.name) &&
