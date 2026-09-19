@@ -75,6 +75,8 @@
 	const canAdd = $derived(canAddGame(format, games));
 	const ownNames = $derived(team.pokemon.map(displayName));
 	const rivalFilled = $derived(rivalTeam.map((n) => n.trim()).filter(Boolean));
+	// The same Pokémon twice on their team is one choice to pick from.
+	const rivalChoices = $derived([...new Set(rivalFilled)]);
 	const speciesByName = $derived(
 		Object.fromEntries(team.pokemon.map((p) => [displayName(p), p.species]))
 	);
@@ -366,11 +368,11 @@
 	{/if}
 
 	<section class="flex flex-col gap-2">
-		{#if rivalFilled.length >= 2}
+		{#if rivalChoices.length >= 2}
 			<span class="{label} mt-2">
 				Opposing selection <span class={hint}>({game.rivalSelection.length}/{SELECTION_SIZE})</span>
 			</span>
-			<PokeToggleGroup names={rivalFilled} selected={game.rivalSelection} ontoggle={pickRival} />
+			<PokeToggleGroup names={rivalChoices} selected={game.rivalSelection} ontoggle={pickRival} />
 		{/if}
 
 		{#if game.rivalSelection.length >= 2}
