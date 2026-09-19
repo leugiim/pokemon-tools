@@ -75,6 +75,9 @@
 			{:else if match.rivalTeam.length > 0 && i === 0}
 				{@render row('Rival', match.rivalTeam, [], [])}
 			{/if}
+			{#if game.notes}
+				<p class="text-xs whitespace-pre-wrap text-gray-300">{game.notes}</p>
+			{/if}
 		{/each}
 		{#if match.notes}
 			<p class="mt-1 text-xs whitespace-pre-wrap text-gray-300">{match.notes}</p>

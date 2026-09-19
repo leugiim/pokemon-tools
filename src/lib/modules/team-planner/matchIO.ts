@@ -10,6 +10,7 @@ interface CompactGame {
 	l: string[]; // lead
 	rs: string[]; // rivalSelection
 	rl: string[]; // rivalLead
+	n?: string; // notes
 }
 
 // Short keys for the compact export
@@ -34,7 +35,8 @@ const encodeGame = (g: Game): CompactGame => ({
 	s: g.selection,
 	l: g.lead,
 	rs: g.rivalSelection,
-	rl: g.rivalLead
+	rl: g.rivalLead,
+	...(g.notes ? { n: g.notes } : {})
 });
 
 const decodeGame = (c: CompactGame): Game => ({
@@ -42,7 +44,8 @@ const decodeGame = (c: CompactGame): Game => ({
 	selection: c.s,
 	lead: c.l,
 	rivalSelection: c.rs,
-	rivalLead: c.rl
+	rivalLead: c.rl,
+	...(c.n ? { notes: c.n } : {})
 });
 
 // The first game also fills the flat keys, so a Bo1 keeps the format older

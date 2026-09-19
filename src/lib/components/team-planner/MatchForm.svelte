@@ -72,6 +72,9 @@
 	let error = $state('');
 
 	const game = $derived(games[activeGame]);
+	// "Game 2 your lead" in a Bo3, "Your lead" otherwise.
+	const title = (text: string) =>
+		format === 'bo3' ? `Game ${activeGame + 1} ${text}` : text[0].toUpperCase() + text.slice(1);
 	const canAdd = $derived(canAddGame(format, games));
 	const ownNames = $derived(team.pokemon.map(displayName));
 	const rivalFilled = $derived(rivalTeam.map((n) => n.trim()).filter(Boolean));
@@ -83,6 +86,13 @@
 	const backHref = $derived(resolve('/teams/[id]', { id: team.id }));
 
 	function setFormat(next: MatchFormat) {
+		// The notes move with the format: a Bo3 keeps them per game, a Bo1 on the match.
+		if (next === 'bo3' && format === 'bo1' && notes.trim() && !games[0].notes) {
+			games[0].notes = notes;
+			notes = '';
+		} else if (next === 'bo1' && format === 'bo3' && !notes.trim() && games[0].notes) {
+			notes = games[0].notes;
+		}
 		format = next;
 		games = gamesForFormat(next, games);
 		activeGame = Math.min(activeGame, games.length - 1);
@@ -220,7 +230,7 @@
 			teamId: team.id,
 			date: original?.date ?? Date.now(),
 			format,
-			games: saved,
+			games: saved.map((g) => ({ ...g, notes: g.notes?.trim() || undefined })),
 			result: matchResult(format, saved),
 			teamRoster: original?.teamRoster ?? ownNames,
 			rivalTeam: rivalFilled,
@@ -229,7 +239,7 @@
 				? rivalSets.filter((set) => rivalFilled.some((name) => isSetOf(set, name)))
 				: undefined,
 			rivalPaste: rivalPaste || undefined,
-			notes: notes.trim()
+			notes: format === 'bo3' ? '' : notes.trim()
 		});
 		goto(backHref);
 	}
@@ -343,7 +353,8 @@
 
 	<section class="flex flex-col gap-2">
 		<span class={label}>
-			Your selection <span class={hint}>({game.selection.length}/{SELECTION_SIZE} selected)</span>
+			{title('your selection')}
+			<span class={hint}>({game.selection.length}/{SELECTION_SIZE} selected)</span>
 		</span>
 		<PokeToggleGroup
 			names={ownNames}
@@ -356,7 +367,8 @@
 	{#if game.selection.length === SELECTION_SIZE}
 		<section class="flex flex-col gap-2">
 			<span class={label}
-				>Your lead <span class={hint}>({game.lead.length}/{LEAD_SIZE} selected)</span></span
+				>{title('your lead')}
+				<span class={hint}>({game.lead.length}/{LEAD_SIZE} selected)</span></span
 			>
 			<PokeToggleGroup
 				names={game.selection}
@@ -370,14 +382,15 @@
 	<section class="flex flex-col gap-2">
 		{#if rivalChoices.length >= 2}
 			<span class="{label} mt-2">
-				Opposing selection <span class={hint}>({game.rivalSelection.length}/{SELECTION_SIZE})</span>
+				{title('opposing selection')}
+				<span class={hint}>({game.rivalSelection.length}/{SELECTION_SIZE})</span>
 			</span>
 			<PokeToggleGroup names={rivalChoices} selected={game.rivalSelection} ontoggle={pickRival} />
 		{/if}
 
 		{#if game.rivalSelection.length >= 2}
 			<span class="{label} mt-2">
-				Opposing lead <span class={hint}>({game.rivalLead.length}/{LEAD_SIZE})</span>
+				{title('opposing lead')} <span class={hint}>({game.rivalLead.length}/{LEAD_SIZE})</span>
 			</span>
 			<PokeToggleGroup
 				names={game.rivalSelection}
@@ -388,10 +401,16 @@
 	</section>
 
 	<section class="flex flex-col gap-1">
-		<label for="match-notes" class={label}>Notes <span class={hint}>(optional)</span></label>
+		<label for="match-notes" class={label}
+			>{title('notes')} <span class={hint}>(optional)</span></label
+		>
 		<textarea
 			id="match-notes"
-			bind:value={notes}
+			value={format === 'bo3' ? (game.notes ?? '') : notes}
+			oninput={(e) => {
+				if (format === 'bo3') game.notes = e.currentTarget.value;
+				else notes = e.currentTarget.value;
+			}}
 			rows="4"
 			placeholder="Key crit, missed move, turning point…"
 			class="w-full rounded-md border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500"

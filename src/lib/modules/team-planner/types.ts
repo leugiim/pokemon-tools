@@ -22,6 +22,8 @@ export interface Game {
 	lead: string[];
 	rivalSelection: string[];
 	rivalLead: string[];
+	/** This game's notes. Only Bo3 games use it; a Bo1's live on the match. */
+	notes?: string;
 }
 
 /**

@@ -50,7 +50,7 @@ export type GameDraft = Omit<Game, 'result'> & { result: MatchResult | '' };
 
 /** An empty game to start filling in. */
 export function emptyGame(): GameDraft {
-	return { result: '', selection: [], lead: [], rivalSelection: [], rivalLead: [] };
+	return { result: '', selection: [], lead: [], rivalSelection: [], rivalLead: [], notes: '' };
 }
 
 /** Games after switching format: Bo1 keeps only the first, Bo3 keeps what's there. */
