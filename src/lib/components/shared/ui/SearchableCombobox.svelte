@@ -51,6 +51,42 @@
 	let highlighted = $state(0);
 	let inputEl: HTMLInputElement | undefined;
 
+	// The dropdown row currently moused over, and its own bounding box —
+	// captured once on hover, not tracked live — so `rowTooltip` (a plain
+	// `position: fixed` element, not nested under the scrollable `<ul>`) can
+	// place itself without being clipped by that list's own `overflow-auto`
+	// the way an absolutely-positioned tooltip nested inside it would be
+	// (`fixed` positions against the viewport, escaping any ancestor's
+	// overflow clipping, as long as nothing in between establishes its own
+	// containing block via `transform`/`filter`/... — nothing here does).
+	let hoveredItem = $state<T | null>(null);
+	let hoveredRect = $state<DOMRect | null>(null);
+
+	const TOOLTIP_MARGIN = 8;
+	const TOOLTIP_MAX_WIDTH = 288; // matches `max-w-72` below
+	const TOOLTIP_EST_HEIGHT = 120; // just for the above/below flip check
+
+	const rowTooltipStyle = $derived.by(() => {
+		if (!hoveredRect) return '';
+		let left = Math.min(hoveredRect.left, window.innerWidth - TOOLTIP_MAX_WIDTH - TOOLTIP_MARGIN);
+		left = Math.max(TOOLTIP_MARGIN, left);
+		let top = hoveredRect.bottom + 4;
+		if (top + TOOLTIP_EST_HEIGHT > window.innerHeight - TOOLTIP_MARGIN) {
+			top = hoveredRect.top - TOOLTIP_EST_HEIGHT - 4;
+		}
+		return `left: ${left}px; top: ${top}px;`;
+	});
+
+	function hoverRow(item: T, e: MouseEvent) {
+		hoveredItem = item;
+		hoveredRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+	}
+
+	function unhoverRow() {
+		hoveredItem = null;
+		hoveredRect = null;
+	}
+
 	// No cap here: even the biggest list (species, ~1500) is still just
 	// plain rows in a scrollable box — cheap enough to render in full,
 	// and capping it hid entries a query hadn't narrowed down to yet.
@@ -63,6 +99,7 @@
 		selected = item;
 		query = '';
 		open = false;
+		unhoverRow();
 		inputEl?.blur();
 	}
 
@@ -100,6 +137,7 @@
 	function clear() {
 		selected = null;
 		query = '';
+		unhoverRow();
 		inputEl?.focus();
 	}
 </script>
@@ -121,7 +159,11 @@
 			bind:value={query}
 			{disabled}
 			onfocus={onFocus}
-			onblur={() => setTimeout(() => (open = false), 100)}
+			onblur={() =>
+				setTimeout(() => {
+					open = false;
+					unhoverRow();
+				}, 100)}
 			onkeydown={onKeydown}
 		/>
 		{#if selected && !open && trailing}
@@ -152,6 +194,7 @@
 	{#if open && results.length > 0}
 		<ul
 			class="absolute z-10 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-gray-700 bg-gray-800 py-1 shadow-lg"
+			onscroll={unhoverRow}
 		>
 			{#each results as item, i (getLabel(item))}
 				<li>
@@ -163,6 +206,8 @@
 							: ''}"
 						onmousedown={(e) => e.preventDefault()}
 						onclick={() => select(item)}
+						onmouseenter={tooltip ? (e) => hoverRow(item, e) : undefined}
+						onmouseleave={tooltip ? unhoverRow : undefined}
 					>
 						{#if icon}{@render icon(item)}{/if}
 						{#if row}
@@ -174,5 +219,15 @@
 				</li>
 			{/each}
 		</ul>
+
+		{#if hoveredItem && tooltip}
+			<div
+				role="tooltip"
+				class="pointer-events-none fixed z-40 w-max max-w-72 rounded border border-gray-700 bg-gray-950 px-2 py-1 text-[10px] text-gray-300 shadow-lg"
+				style={rowTooltipStyle}
+			>
+				{@render tooltip(hoveredItem)}
+			</div>
+		{/if}
 	{/if}
 </div>
