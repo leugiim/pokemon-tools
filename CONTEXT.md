@@ -91,17 +91,19 @@ _Avoid_: clearing `slot.ability` to `null` when a common set's own `ability` is 
 
 **Move picker (learnset filter)**:
 `MoveSlot`'s `MoveCombobox` only offers moves the slot's own species can currently learn
-(`calc/learnsets.ts`'s `movesOf`), instead of every move this app's generation has — sourced from
-`@pkmn/dex`'s own bundled learnset data (`Dex#learnsets`, async but not a network fetch — its data
-chunk is loaded lazily on first call), since `@smogon/calc` carries no learnset data at all. A move
-counts as learnable when one of its sources is tagged for the current generation, falling back to
-a species' entire historical movepool when its learnset has none (roughly 40% of Regulation M-C's
-own roster — mostly older species Scarlet/Violet's DLC added back via HOME transfer that
-`@pkmn/dex`'s data hasn't caught up with — an empty picker would be worse). A battle-only/stance
-forme with no learnset entry of its own shares its `baseSpecies`'s moveset instead, same as
-`formsOf` does for the species picker itself. See ADR-0008.
-_Avoid_: treating this as real move-legality enforcement (the gen-9-tag fallback can surface a move
-a species can no longer actually re-teach) — it narrows the picker, the reader still validates it
+(`calc/learnsets.ts`'s `movesOf`), instead of every move this app's generation has — since
+`@smogon/calc` carries no learnset data at all. Prefers a real, Champions-specific learnset
+(`@pkmn/mods`' `champions` mod — a flat TM-only teach system, genuinely not just Scarlet/Violet's
+movepool, e.g. it teaches Pikachu Volt Tackle but not Tera Blast), falling back to `@pkmn/dex`'s
+own bundled Scarlet/Violet learnset (`Dex#learnsets`, async but not a network fetch) for the ~10%
+of the roster the Champions source doesn't cover yet, and further to that species' entire
+historical movepool when even `@pkmn/dex` has no move tagged for the current generation (an empty
+picker would be worse). A battle-only/stance forme with no learnset entry of its own, in whichever
+source is being consulted, shares its `baseSpecies`'s moveset instead, same as `formsOf` does for
+the species picker itself. See ADR-0008.
+_Avoid_: treating this as real move-legality enforcement (either SV-based fallback layer can
+surface a move a species can no longer actually re-teach, or miss a Champions-only unlock like
+Volt Tackle) — it narrows the picker, the reader still validates it
 
 ## Shared language
 

@@ -13,21 +13,25 @@ function names(moves: Awaited<ReturnType<typeof movesOf>>): string[] {
 }
 
 describe('movesOf', () => {
-	it('only includes moves the species can actually learn', async () => {
+	it("prefers @pkmn/mods' real Champions learnset over Scarlet/Violet's", async () => {
+		// Champions' own data (Pikachu's own entry there, verified by hand)
+		// teaches Volt Tackle (an SV egg-only move, never a TM/tutor there)
+		// but not Tera Blast (a universal SV TM) — a real divergence, not
+		// just a subset, so this can't be passing by falling back to SV.
 		const pikachu = names(await movesOf(species('Pikachu')));
-		expect(pikachu).toContain('Thunderbolt');
-		expect(pikachu).not.toContain('Leaf Storm');
+		expect(pikachu).toContain('Volt Tackle');
+		expect(pikachu).not.toContain('Tera Blast');
 	});
 
-	it("shares its base species' moves for a battle-only forme (Mega Evolution)", async () => {
+	it("shares its base species' moves for a battle-only forme (Mega Evolution) with no Champions entry of its own", async () => {
 		const charizard = await movesOf(species('Charizard'));
 		const megaX = await movesOf(species('Charizard-Mega-X'));
 		expect(names(megaX)).toEqual(names(charizard));
 		expect(names(megaX)).toContain('Flamethrower');
 	});
 
-	it('resolves Aegislash-Shield and Aegislash-Blade to the same, plain-"Aegislash" moveset', async () => {
-		// Neither has its own entry in @pkmn/dex's data (see
+	it('resolves Aegislash-Shield and Aegislash-Blade to the same, plain-"Aegislash" Champions moveset', async () => {
+		// Neither has its own entry in @pkmn/mods' data (see
 		// LEARNSET_NAME_OVERRIDES) — verified by hand.
 		const shield = await movesOf(species('Aegislash-Shield'));
 		const blade = await movesOf(species('Aegislash-Blade'));
@@ -35,11 +39,21 @@ describe('movesOf', () => {
 		expect(names(shield)).toContain("King's Shield");
 	});
 
-	it('falls back to the full historical movepool for a species @pkmn/dex has no current-gen tags for', async () => {
-		// Absol's own learnset entry exists, but (as of this data snapshot)
-		// has no single move tagged for the current generation — a Pokémon
-		// Champions DLC-only species @pkmn/dex hasn't caught up with yet.
-		// Its signature moves must still show up rather than an empty list.
+	it("falls back to @pkmn/dex's Scarlet/Violet learnset for a species @pkmn/mods' Champions data doesn't cover yet", async () => {
+		// Salamence has no entry at all in @pkmn/mods' champions Learnsets
+		// (verified by hand — it's part of the ~10% of Regulation M-C's
+		// roster that data hasn't caught up with), so this exercises
+		// svLearnsetOf end to end rather than the Champions-mod path.
+		const salamence = names(await movesOf(species('Salamence')));
+		expect(salamence).toContain('Dragon Claw');
+	});
+
+	it('falls back further, to the full historical movepool, for a species @pkmn/dex has no current-gen tags for either', async () => {
+		// Absol has no @pkmn/mods entry, and its @pkmn/dex learnset (as of
+		// this data snapshot) has no single move tagged for the current
+		// generation — a species Scarlet/Violet's DLC added back via HOME
+		// transfer that neither source has fully caught up with. Its
+		// signature moves must still show up rather than an empty list.
 		const absol = names(await movesOf(species('Absol')));
 		expect(absol).toContain('Sucker Punch');
 		expect(absol).toContain('Night Slash');
