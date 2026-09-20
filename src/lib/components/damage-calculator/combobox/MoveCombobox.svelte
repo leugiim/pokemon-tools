@@ -73,6 +73,7 @@
 	{items}
 	bind:selected
 	getLabel={(m) => m.name}
+	matches={(m, q) => m.name.toLowerCase().includes(q) || m.type.toLowerCase().includes(q)}
 	placeholder={loading ? 'Loading…' : 'Select a move…'}
 	disabled={disabled || loading}
 	{row}

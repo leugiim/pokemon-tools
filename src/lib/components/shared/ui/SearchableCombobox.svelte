@@ -5,6 +5,7 @@
 		items,
 		selected = $bindable(null),
 		getLabel,
+		matches,
 		placeholder = 'Select…',
 		icon,
 		row,
@@ -17,6 +18,13 @@
 		items: T[];
 		selected?: T | null;
 		getLabel: (item: T) => string;
+		/**
+		 * Whether `item` matches an already-trimmed, lowercased `query` —
+		 * overrides the default plain-label substring check (e.g. a move
+		 * combobox also matching on type, so "elec" finds Electric moves,
+		 * not just names containing "elec").
+		 */
+		matches?: (item: T, query: string) => boolean;
 		placeholder?: string;
 		icon?: Snippet<[T]>;
 		/**
@@ -92,7 +100,10 @@
 	// and capping it hid entries a query hadn't narrowed down to yet.
 	const results = $derived.by(() => {
 		const q = query.trim().toLowerCase();
-		return q ? items.filter((item) => getLabel(item).toLowerCase().includes(q)) : items;
+		if (!q) return items;
+		return matches
+			? items.filter((item) => matches(item, q))
+			: items.filter((item) => getLabel(item).toLowerCase().includes(q));
 	});
 
 	function select(item: T) {
