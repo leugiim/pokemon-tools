@@ -89,6 +89,20 @@ A `TeamSlotCard`'s "Common Sets" button (next to "Import") opens `CommonSetsModa
 `ability` is the one field this doesn't treat like PokePaste import does: most of the vendored sets (123 of 151 at vendoring time) simply don't specify one at all — the source tool apparently leaves it to whatever's already selected rather than treating it as part of the set — so `CommonSet.ability` is `string | undefined`, and `applyCommonSet` leaves the slot's current ability alone when it's `undefined` rather than clearing it to `null` the way a PokePaste import's genuinely-absent ability does. A Mega Evolution's sets live under its base species (holding the Mega Stone as the `item`), never a separate `"X-Mega-Y"` key — applying one never switches the slot's own forme, same as import.
 _Avoid_: clearing `slot.ability` to `null` when a common set's own `ability` is `undefined` (destroys a perfectly good auto-filled ability for the ~80% of sets that just don't mention one — see ADR-0006)
 
+**Move picker (learnset filter)**:
+`MoveSlot`'s `MoveCombobox` only offers moves the slot's own species can currently learn
+(`calc/learnsets.ts`'s `movesOf`), instead of every move this app's generation has — sourced from
+`@pkmn/dex`'s own bundled learnset data (`Dex#learnsets`, async but not a network fetch — its data
+chunk is loaded lazily on first call), since `@smogon/calc` carries no learnset data at all. A move
+counts as learnable when one of its sources is tagged for the current generation, falling back to
+a species' entire historical movepool when its learnset has none (roughly 40% of Regulation M-C's
+own roster — mostly older species Scarlet/Violet's DLC added back via HOME transfer that
+`@pkmn/dex`'s data hasn't caught up with — an empty picker would be worse). A battle-only/stance
+forme with no learnset entry of its own shares its `baseSpecies`'s moveset instead, same as
+`formsOf` does for the species picker itself. See ADR-0008.
+_Avoid_: treating this as real move-legality enforcement (the gen-9-tag fallback can surface a move
+a species can no longer actually re-teach) — it narrows the picker, the reader still validates it
+
 ## Shared language
 
 **Set data** (`PokemonSetData`, `modules/shared`):

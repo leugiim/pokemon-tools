@@ -52,6 +52,7 @@
 	},
 	"dependencies": {
 		"@lucide/svelte": "^1.47.0",
+		"@pkmn/dex": "^0.10.11",
 		"@pkmn/sets": "^5.2.0",
 		"@smogon/calc": "file:vendor/smogon-calc"
 	}

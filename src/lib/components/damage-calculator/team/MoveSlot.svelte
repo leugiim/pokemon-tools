@@ -36,7 +36,7 @@
 <div class="flex w-full flex-col gap-1">
 	<div class="flex w-full items-center gap-2">
 		<div class="min-w-0 flex-1">
-			<MoveCombobox bind:selected {disabled} />
+			<MoveCombobox species={attacker.species} bind:selected {disabled} />
 		</div>
 		<div class="flex w-20 shrink-0 justify-center">
 			{#if selected}
