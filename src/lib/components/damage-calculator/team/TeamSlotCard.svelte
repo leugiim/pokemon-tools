@@ -275,11 +275,12 @@
 
 	<!-- Moves. -->
 	<div class="flex min-w-0 flex-1 flex-col gap-1 @3xl:self-stretch">
-		<div class="flex items-center gap-2 text-[10px] font-medium text-gray-300">
-			<span class="flex-1">Move</span>
-			<span class="w-20 shrink-0 text-center">Type</span>
+		<div class="flex items-center gap-2 px-2 text-[10px] font-medium text-gray-300">
+			<span class="flex-1">Moves</span>
+			<span class="w-16 shrink-0 text-center">Type</span>
 			<span class="w-8 shrink-0 text-center">Cat</span>
 			<span class="w-8 shrink-0 text-right">Power</span>
+			<span class="w-4 shrink-0 text-right"></span>
 		</div>
 		{#each [0, 1, 2, 3] as i (i)}
 			<MoveSlot bind:selected={slot.moves[i]} {disabled} attacker={slot} moveIndex={i} />
