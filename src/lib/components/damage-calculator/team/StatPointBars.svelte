@@ -17,6 +17,7 @@
 		type StatPoints
 	} from '$lib/modules/damage-calculator/calc/format';
 	import type { SpeciesItem } from '$lib/modules/shared/species/generation';
+	import { field } from '$lib/modules/damage-calculator/stores/field.svelte';
 	import NumberStepper from '$lib/components/shared/ui/NumberStepper.svelte';
 
 	let {
@@ -45,9 +46,10 @@
 	const isNeutral = $derived(nature.plus === nature.minus);
 
 	function setStat(stat: StatID, value: number) {
-		// Can't exceed the per-stat cap, nor spend more than what's left
-		// of the total budget once this stat's current points are given back.
-		const budget = remaining + statPoints[stat];
+		// Can't exceed the per-stat cap regardless — with `statPointsUnlimited`
+		// off, also can't spend more than what's left of the total budget
+		// once this stat's current points are given back.
+		const budget = field.statPointsUnlimited ? MAX_SP_PER_STAT : remaining + statPoints[stat];
 		statPoints[stat] = Math.max(0, Math.min(value, MAX_SP_PER_STAT, budget));
 	}
 
@@ -149,7 +151,11 @@
 <div class="flex w-full flex-col gap-1">
 	<div class="flex items-center justify-between text-[10px] font-medium text-gray-300">
 		<span>Stat Points</span>
-		<span class={remaining < 0 ? 'text-red-400' : ''}>{spent}/{MAX_SP_TOTAL}</span>
+		{#if field.statPointsUnlimited}
+			<span>{spent} SP (unlimited)</span>
+		{:else}
+			<span class={remaining < 0 ? 'text-red-400' : ''}>{spent}/{MAX_SP_TOTAL}</span>
+		{/if}
 	</div>
 
 	{#each STAT_ORDER as stat (stat)}

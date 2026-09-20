@@ -91,6 +91,24 @@
 				</ToggleButton>
 			{/each}
 		</div>
+		<div
+			class="inline-flex divide-x divide-gray-700 overflow-hidden rounded border border-gray-700"
+		>
+			<ToggleButton
+				active={!field.statPointsUnlimited}
+				onclick={() => (field.statPointsUnlimited = false)}
+				title="Stat Points capped at 66 total across all six stats — Regulation M-C's real rule"
+			>
+				66 SP
+			</ToggleButton>
+			<ToggleButton
+				active={field.statPointsUnlimited}
+				onclick={() => (field.statPointsUnlimited = true)}
+				title="No total cap — each stat can still only go up to 32 SP on its own. For exploring builds beyond what the real format allows"
+			>
+				Unlimited SP
+			</ToggleButton>
+		</div>
 	</div>
 
 	<div class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
