@@ -7,6 +7,9 @@
 		getLabel,
 		placeholder = 'Select…',
 		icon,
+		row,
+		trailing,
+		tooltip,
 		clearable = true,
 		disabled = false,
 		class: className = ''
@@ -16,6 +19,26 @@
 		getLabel: (item: T) => string;
 		placeholder?: string;
 		icon?: Snippet<[T]>;
+		/**
+		 * Replaces a dropdown row's plain `getLabel(item)` text with richer
+		 * content (e.g. a move's name plus its type/category/power) when
+		 * given. Falls back to the plain label when omitted.
+		 */
+		row?: Snippet<[T]>;
+		/**
+		 * Extra content shown after the input, before the clear button —
+		 * only while collapsed with something selected (same as `icon`, but
+		 * trailing rather than leading). Nothing renders when omitted.
+		 */
+		trailing?: Snippet<[T]>;
+		/**
+		 * A hover tooltip for the collapsed, selected control (not shown
+		 * while the dropdown itself is open, or for an individual dropdown
+		 * row — a tooltip nested in the dropdown's own scrollable list
+		 * would get clipped by its `overflow-auto`). Nothing renders, and no
+		 * `group` hover wiring is added, when omitted.
+		 */
+		tooltip?: Snippet<[T]>;
 		/** Whether a selection can be cleared back to `null` (default true). */
 		clearable?: boolean;
 		disabled?: boolean;
@@ -81,7 +104,7 @@
 	}
 </script>
 
-<div class="relative {className}">
+<div class="relative {className} {tooltip ? 'group' : ''}">
 	<div
 		class="flex h-8 items-center gap-2 rounded-lg border border-gray-700 bg-gray-800 px-2 focus-within:border-indigo-400 focus-within:ring-1 focus-within:ring-indigo-400 {disabled
 			? 'opacity-40'
@@ -101,6 +124,9 @@
 			onblur={() => setTimeout(() => (open = false), 100)}
 			onkeydown={onKeydown}
 		/>
+		{#if selected && !open && trailing}
+			{@render trailing(selected)}
+		{/if}
 		{#if selected && clearable}
 			<button
 				type="button"
@@ -113,6 +139,15 @@
 			</button>
 		{/if}
 	</div>
+
+	{#if selected && !open && tooltip}
+		<div
+			role="tooltip"
+			class="pointer-events-none invisible absolute top-full left-0 z-40 mt-1 w-max max-w-72 rounded border border-gray-700 bg-gray-950 px-2 py-1 text-[10px] text-gray-300 opacity-0 shadow-lg transition-opacity group-hover:visible group-hover:opacity-100"
+		>
+			{@render tooltip(selected)}
+		</div>
+	{/if}
 
 	{#if open && results.length > 0}
 		<ul
@@ -130,7 +165,11 @@
 						onclick={() => select(item)}
 					>
 						{#if icon}{@render icon(item)}{/if}
-						<span>{getLabel(item)}</span>
+						{#if row}
+							{@render row(item)}
+						{:else}
+							<span>{getLabel(item)}</span>
+						{/if}
 					</button>
 				</li>
 			{/each}
