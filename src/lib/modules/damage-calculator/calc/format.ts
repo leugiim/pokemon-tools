@@ -3,7 +3,7 @@ import { NATURES, type StatID } from '@smogon/calc';
 export type NatureName = Extract<keyof typeof NATURES, string>;
 
 /**
- * Pokemon Champions' format rules — always in effect, no toggle:
+ * Pokemon Champions' format rules:
  * https://champsdex.com/posts/pokemon-champions-ev-iv-stats-guide-2026/
  *
  * - Every Pokémon battles at level 50.
@@ -13,6 +13,11 @@ export type NatureName = Extract<keyof typeof NATURES, string>;
  *   Unlike EVs, an SP is a flat +1 to the final stat — there's no
  *   `floor(EV / 4)` step, so this does *not* plug into the standard
  *   games' stat formula and needs its own (see {@link calcStat}).
+ *
+ * Level, IVs and the 32-per-stat cap are always in effect, no toggle —
+ * only the 66 total is optionally liftable (`FieldConditions.statPointsUnlimited`,
+ * a "what if" for exploring builds beyond what the real format allows),
+ * so `MAX_SP_TOTAL` itself still names the real, legal number regardless.
  */
 export const LEVEL = 50;
 export const FIXED_IV = 31;

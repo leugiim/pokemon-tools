@@ -33,6 +33,11 @@ export type BattleFormat = State.Field['gameType'];
  * the ability actually works. `null` means Auto (derive from whether any
  * of the 4 Pokemon on the field has the ability), matching the
  * Auto/On/Off convention `TeamAllySupport`'s own static flags use.
+ *
+ * `statPointsUnlimited` isn't a field condition either, same as
+ * `battleFormat` above — it lives here anyway as this app's other single,
+ * whole-calculator (not per-team, not per-Pokemon) toggle, rather than a
+ * one-field store of its own. See `format.ts`'s `MAX_SP_TOTAL`.
  */
 export interface FieldConditions {
 	/**
@@ -55,6 +60,8 @@ export interface FieldConditions {
 	swordOfRuin: boolean | null;
 	beadsOfRuin: boolean | null;
 	fairyAura: boolean | null;
+	/** Lifts `format.ts`'s `MAX_SP_TOTAL` (66) cap on every slot's Stat Point spread — the per-stat `MAX_SP_PER_STAT` (32) cap still applies regardless, see `StatPointBars`' own `setStat`. Off by default: matches Regulation M-C's real rule. */
+	statPointsUnlimited: boolean;
 }
 
 export function defaultFieldConditions(): FieldConditions {
@@ -67,7 +74,8 @@ export function defaultFieldConditions(): FieldConditions {
 		tabletsOfRuin: null,
 		swordOfRuin: null,
 		beadsOfRuin: null,
-		fairyAura: null
+		fairyAura: null,
+		statPointsUnlimited: false
 	};
 }
 
